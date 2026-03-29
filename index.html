@@ -1,0 +1,1477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShieldCheck - Cybersecurity Education Platform</title>
+
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- zxcvbn Password Strength Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/zxcvbn/4.4.2/zxcvbn.js"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'sans-serif'],
+                        'mono': ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        'cyber-dark': '#0a0e17',
+                        'cyber-darker': '#060a12',
+                        'cyber-blue': '#00d4ff',
+                        'cyber-purple': '#a855f7',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0a0e17; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #334155; }
+
+        /* Base Animations */
+        .strength-glow { transition: all 0.3s ease; box-shadow: 0 0 20px; }
+        .hero-gradient { background: linear-gradient(135deg, rgba(0, 212, 255, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%); }
+
+        /* Card Hover Effects */
+        .card-hover {
+            transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+        .card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 60px rgba(0, 212, 255, 0.15);
+            border-color: rgba(0, 212, 255, 0.4);
+        }
+
+        /* Section Card Hover */
+        .section-card {
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+        .section-card:hover {
+            border-color: rgba(0, 212, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        /* Button Hover Effects */
+        .btn-glow {
+            transition: all 0.2s ease;
+        }
+        .btn-glow:hover {
+            box-shadow: 0 0 25px rgba(0, 212, 255, 0.4);
+            transform: scale(1.02);
+        }
+        .btn-glow:active {
+            transform: scale(0.98);
+        }
+
+        /* Pulse Alert */
+        @keyframes pulse-alert { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .pulse-alert { animation: pulse-alert 2s ease-in-out infinite; }
+
+        /* Scanning Effect */
+        @keyframes scan { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+        .scanning { background: linear-gradient(90deg, transparent, rgba(0, 212, 255, 0.3), transparent); background-size: 200% 100%; animation: scan 1.5s linear infinite; }
+
+        /* Step Animations */
+        @keyframes step-active { 0% { transform: scale(1); } 50% { transform: scale(1.15); } 100% { transform: scale(1); } }
+        .step-active { animation: step-active 0.5s ease-out; }
+
+        /* Step Glow Animation - fires once, no loop */
+        @keyframes step-glow {
+            0% { box-shadow: 0 0 0px transparent; transform: scale(1); }
+            50% { box-shadow: 0 0 30px currentColor; transform: scale(1.1); }
+            100% { box-shadow: 0 0 0px transparent; transform: scale(1); }
+        }
+        .step-glow-once { animation: step-glow 0.6s ease-out forwards; }
+
+        /* Typing cursor */
+        .typing-cursor::after {
+            content: '|';
+            animation: blink 0.5s step-end infinite;
+        }
+
+        .step-complete { opacity: 100 !important; }
+        .step-pending { opacity: 50; }
+
+        .flow-line {
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.3s ease, transform 0.3s ease;
+        }
+        .flow-line.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .flow-arrow {
+            opacity: 0;
+            transition: opacity 0.2s ease;
+        }
+        .flow-arrow.show {
+            opacity: 1;
+        }
+
+        /* Matrix/Terminal Animation */
+        @keyframes matrix-fall {
+            0% { transform: translateY(-100%); opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { transform: translateY(100vh); opacity: 0; }
+        }
+        .matrix-char {
+            display: inline-block;
+            animation: matrix-fall 2s linear forwards;
+        }
+
+        /* Terminal Cursor */
+        @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0; } }
+        .cursor-blink { animation: blink 1s step-end infinite; }
+
+        /* Fade In Up */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in-up {
+            animation: fadeInUp 0.5s ease forwards;
+        }
+
+        /* Float Animation */
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        .float { animation: float 3s ease-in-out infinite; }
+
+        /* Progress Bar Stripes */
+        @keyframes stripes {
+            0% { background-position: 0 0; }
+            100% { background-position: 40px 0; }
+        }
+        .progress-stripes {
+            background-image: linear-gradient(
+                45deg,
+                rgba(255,255,255,0.1) 25%,
+                transparent 25%,
+                transparent 50%,
+                rgba(255,255,255,0.1) 50%,
+                rgba(255,255,255,0.1) 75%,
+                transparent 75%
+            );
+            background-size: 40px 40px;
+            animation: stripes 1s linear infinite;
+        }
+
+        /* Modal Backdrop */
+        .modal-backdrop {
+            backdrop-filter: blur(8px);
+            background: rgba(0, 0, 0, 0.8);
+        }
+
+        /* Typing Effect */
+        @keyframes typing {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+        .typing-effect {
+            overflow: hidden;
+            white-space: nowrap;
+            animation: typing 2s steps(40, end);
+        }
+
+        /* Shimmer Effect for Loading */
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        .shimmer {
+            background: linear-gradient(90deg, #1a1a2e 25%, #2a2a4e 50%, #1a1a2e 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+    </style>
+</head>
+<body class="bg-cyber-darker text-gray-100 font-sans min-h-screen">
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 right-0 z-50 bg-cyber-darker/90 backdrop-blur-md border-b border-gray-800 transition-all duration-300">
+        <div class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-3 group cursor-pointer">
+                <div class="w-10 h-10 bg-gradient-to-br from-cyber-blue to-cyber-purple rounded-lg flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                    </svg>
+                </div>
+                <span class="text-xl font-bold bg-gradient-to-r from-cyber-blue to-cyber-purple bg-clip-text text-transparent">ShieldCheck</span>
+            </div>
+            <div class="flex items-center space-x-6">
+                <a href="#dashboard" class="text-gray-400 hover:text-cyber-blue transition-all duration-200 hover:scale-105">Dashboard</a>
+                <a href="#how-it-works" class="text-gray-400 hover:text-cyber-blue transition-all duration-200 hover:scale-105">How It Works</a>
+                <a href="#about" class="text-gray-400 hover:text-cyber-blue transition-all duration-200 hover:scale-105">About</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-gradient pt-32 pb-16">
+        <div class="max-w-6xl mx-auto px-6">
+            <div class="text-center mb-12 fade-in-up">
+                <div class="inline-flex items-center space-x-2 bg-cyber-blue/10 border border-cyber-blue/30 rounded-full px-4 py-2 mb-6">
+                    <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
+                    <span class="text-sm text-cyber-blue">Live Security Analysis</span>
+                </div>
+                <h1 class="text-5xl md:text-6xl font-bold mb-6">
+                    <span class="bg-gradient-to-r from-white via-gray-200 to-gray-400 bg-clip-text text-transparent">Password Security</span>
+                    <br>
+                    <span class="bg-gradient-to-r from-cyber-blue to-cyber-purple bg-clip-text text-transparent">Made Transparent</span>
+                </h1>
+                <p class="text-xl text-gray-400 max-w-2xl mx-auto">Explore password strength, simulate attacks, and understand cybersecurity concepts — all locally in your browser.</p>
+            </div>
+
+            <!-- Main Input Card -->
+            <div class="bg-gray-900/80 backdrop-blur-xl border border-gray-800 rounded-2xl p-8 max-w-3xl mx-auto shadow-2xl card-hover fade-in-up" style="animation-delay: 0.2s">
+                <div class="mb-6">
+                    <label for="password" class="block text-sm font-medium text-gray-300 mb-2">Enter Password to Analyze</label>
+                    <div class="relative">
+                        <input type="password" id="password" placeholder="Type your password here..." class="w-full bg-gray-800/50 border border-gray-700 rounded-xl px-4 py-4 pr-12 text-lg font-mono text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-cyber-blue focus:border-transparent transition-all" autocomplete="off">
+                        <button id="togglePassword" type="button" class="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white transition-colors p-1" aria-label="Toggle password visibility">
+                            <svg id="eyeIcon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                            </svg>
+                            <svg id="eyeOffIcon" class="w-5 h-5 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <div id="strengthSection" class="mb-6">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-sm font-medium text-gray-300">Password Strength</span>
+                        <span id="strengthLabel" class="text-sm font-medium text-gray-500">Enter a password</span>
+                    </div>
+                    <div class="h-3 bg-gray-800 rounded-full overflow-hidden">
+                        <div id="strengthBar" class="h-full rounded-full transition-all duration-300 strength-glow progress-stripes" style="width: 0%"></div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <button id="generatePassphrase" class="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white font-medium py-3 rounded-xl transition-all duration-200 btn-glow flex items-center justify-center space-x-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                        <span class="text-sm">Enhance</span>
+                    </button>
+                    <button id="checkBreach" disabled class="bg-gradient-to-r from-cyber-blue to-cyber-purple hover:from-cyber-blue/90 hover:to-cyber-purple/90 disabled:from-gray-700 disabled:to-gray-700 disabled:cursor-not-allowed text-white font-medium py-3 rounded-xl transition-all duration-200 btn-glow flex items-center justify-center space-x-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
+                        <span class="text-sm">Check Breach</span>
+                    </button>
+                    <button id="simulateAttack" disabled class="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 disabled:from-gray-700 disabled:to-gray-700 disabled:cursor-not-allowed text-white font-medium py-3 rounded-xl transition-all duration-200 btn-glow flex items-center justify-center space-x-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                        <span class="text-sm">Simulate</span>
+                    </button>
+                    <button id="openPrivacy" class="bg-gradient-to-r from-yellow-600 to-yellow-700 hover:from-yellow-700 hover:to-yellow-800 text-white font-medium py-3 rounded-xl transition-all duration-200 btn-glow flex items-center justify-center space-x-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                        </svg>
+                        <span class="text-sm">Privacy</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Dashboard Section -->
+    <section id="dashboard" class="py-16">
+        <div class="max-w-6xl mx-auto px-6">
+            <div class="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+                <!-- Strength Analysis Card -->
+                <div class="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 section-card card-hover">
+                    <div class="flex items-center space-x-3 mb-6">
+                        <div class="w-10 h-10 bg-cyber-blue/20 rounded-lg flex items-center justify-center transition-all duration-300 hover:scale-110 hover:bg-cyber-blue/30">
+                            <svg class="w-5 h-5 text-cyber-blue" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold">Strength Analysis</h3>
+                    </div>
+                    <div id="strengthCard" class="space-y-4">
+                        <div class="flex items-center space-x-4">
+                            <div class="text-4xl font-bold font-mono transition-all duration-300" id="scoreDisplay">—</div>
+                            <div class="text-sm text-gray-400">
+                                <div>out of 4</div>
+                                <div>strong characters</div>
+                            </div>
+                        </div>
+                        <div id="feedbackList" class="space-y-2">
+                            <div class="text-gray-500 text-sm italic">Analysis will appear here</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Breach Status Card -->
+                <div class="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 section-card card-hover">
+                    <div class="flex items-center space-x-3 mb-6">
+                        <div class="w-10 h-10 bg-cyber-purple/20 rounded-lg flex items-center justify-center transition-all duration-300 hover:scale-110 hover:bg-cyber-purple/30">
+                            <svg class="w-5 h-5 text-cyber-purple" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold">Breach Status</h3>
+                    </div>
+                    <div id="breachCard">
+                        <div id="breachInitial" class="text-center py-8">
+                            <div class="w-16 h-16 mx-auto mb-4 bg-gray-800 rounded-full flex items-center justify-center transition-all duration-300 hover:bg-gray-700">
+                                <svg class="w-8 h-8 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <p class="text-gray-500 text-sm">Enter a password and check</p>
+                        </div>
+                        <div id="breachLoading" class="hidden text-center py-8">
+                            <div class="w-16 h-16 mx-auto mb-4 bg-cyber-purple/20 rounded-full flex items-center justify-center">
+                                <svg class="w-8 h-8 text-cyber-purple animate-spin" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                            </div>
+                            <p class="text-gray-400 text-sm">Checking...</p>
+                            <p class="text-xs text-gray-600 mt-2 font-mono" id="hashPreview">SHA1(......)</p>
+                        </div>
+                        <div id="breachSafe" class="hidden">
+                            <div class="text-center py-4">
+                                <div class="w-16 h-16 mx-auto mb-4 bg-green-500/20 rounded-full flex items-center justify-center pulse-alert transition-all duration-300 hover:scale-110">
+                                    <svg class="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                    </svg>
+                                </div>
+                                <h4 class="text-lg font-semibold text-green-400 mb-2">Not Found</h4>
+                                <p class="text-gray-400 text-sm">Safe from known breaches</p>
+                                <div class="mt-3 text-2xl font-bold font-mono text-green-400">0</div>
+                                <p class="text-xs text-gray-500">times in breaches</p>
+                            </div>
+                        </div>
+                        <div id="breachFound" class="hidden">
+                            <div class="text-center py-4">
+                                <div class="w-16 h-16 mx-auto mb-4 bg-red-500/20 rounded-full flex items-center justify-center pulse-alert transition-all duration-300 hover:scale-110">
+                                    <svg class="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                    </svg>
+                                </div>
+                                <h4 class="text-lg font-semibold text-red-400 mb-2">Compromised!</h4>
+                                <p class="text-gray-400 text-sm">Found in data breaches</p>
+                                <div class="mt-3 text-2xl font-bold font-mono text-red-400" id="breachCount">0</div>
+                                <p class="text-xs text-gray-500">times seen</p>
+                            </div>
+                        </div>
+                        <div id="breachError" class="hidden">
+                            <div class="text-center py-4">
+                                <div class="w-16 h-16 mx-auto mb-4 bg-yellow-500/20 rounded-full flex items-center justify-center">
+                                    <svg class="w-8 h-8 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                </div>
+                                <h4 class="text-lg font-semibold text-yellow-400 mb-2">Check Failed</h4>
+                                <p class="text-gray-400 text-sm" id="errorMessage">Unable to check</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cracking Time Card -->
+                <div class="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 section-card card-hover">
+                    <div class="flex items-center space-x-3 mb-6">
+                        <div class="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center transition-all duration-300 hover:scale-110 hover:bg-red-500/30">
+                            <svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold">Time to Crack</h3>
+                    </div>
+                    <div id="crackTimeCard" class="space-y-3">
+                        <div class="flex items-center justify-between py-2 border-b border-gray-800">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-xs">&#128187;</span>
+                                <span class="text-sm text-gray-400">Laptop (CPU)</span>
+                            </div>
+                            <span id="crackLaptop" class="text-sm font-mono text-gray-500">—</span>
+                        </div>
+                        <div class="flex items-center justify-between py-2 border-b border-gray-800">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-xs">&#127918;</span>
+                                <span class="text-sm text-gray-400">RTX 4090</span>
+                            </div>
+                            <span id="crackGPU" class="text-sm font-mono text-gray-500">—</span>
+                        </div>
+                        <div class="flex items-center justify-between py-2">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-xs">&#9881;</span>
+                                <span class="text-sm text-gray-400">Botnet/Cloud</span>
+                            </div>
+                            <span id="crackCloud" class="text-sm font-mono text-gray-500">—</span>
+                        </div>
+                    </div>
+                    <p class="text-xs text-gray-600 mt-4 italic">Based on SHA-1 hash rate</p>
+                </div>
+            </div>
+
+            <!-- Pattern Analysis Card (Full Width) -->
+            <div class="mt-6 bg-gray-900/50 border border-gray-800 rounded-2xl p-6 section-card card-hover max-w-5xl mx-auto">
+                <div class="flex items-center space-x-3 mb-6">
+                    <div class="w-10 h-10 bg-amber-500/20 rounded-lg flex items-center justify-center transition-all duration-300 hover:scale-110 hover:bg-amber-500/30">
+                        <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold">Pattern Detection</h3>
+                </div>
+                <div id="patternAnalysis" class="grid md:grid-cols-3 gap-4">
+                    <div id="patternL33t" class="hidden bg-red-500/10 border border-red-500/30 rounded-xl p-4 transition-all duration-300 hover:border-red-500/50 min-h-[90px] flex flex-col items-center text-center">
+                        <svg class="w-5 h-5 text-red-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                        <span class="text-sm font-medium text-red-400 mb-1">L33t Speak</span>
+                        <p id="patternL33tText" class="text-xs text-gray-400 leading-relaxed"></p>
+                    </div>
+                    <div id="patternKeyboard" class="hidden bg-orange-500/10 border border-orange-500/30 rounded-xl p-4 transition-all duration-300 hover:border-orange-500/50 min-h-[90px] flex flex-col items-center text-center">
+                        <svg class="w-5 h-5 text-orange-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                        <span class="text-sm font-medium text-orange-400 mb-1">Keyboard Pattern</span>
+                        <p id="patternKeyboardText" class="text-xs text-gray-400 leading-relaxed"></p>
+                    </div>
+                    <div id="patternYear" class="hidden bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4 transition-all duration-300 hover:border-yellow-500/50 min-h-[90px] flex flex-col items-center text-center">
+                        <svg class="w-5 h-5 text-yellow-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                        <span class="text-sm font-medium text-yellow-400 mb-1">Common Year</span>
+                        <p id="patternYearText" class="text-xs text-gray-400 leading-relaxed"></p>
+                    </div>
+                    <div id="patternNone" class="col-span-3 text-center py-4 text-gray-500 text-sm">
+                        <span class="inline-flex items-center justify-center space-x-2">
+                            <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            <span>No common patterns detected</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section id="how-it-works" class="py-16 bg-gray-900/50">
+        <div class="max-w-6xl mx-auto px-6">
+            <div class="text-center mb-12">
+                <h2 class="text-3xl font-bold mb-4">How k-Anonymity Protects Your Privacy</h2>
+                <p class="text-gray-400 max-w-2xl mx-auto">When you check for breaches, your password never leaves your browser in a recognizable form.</p>
+            </div>
+            <div class="max-w-4xl mx-auto">
+                <!-- Dynamic Flow -->
+                <div id="kAnonFlow" class="hidden">
+                    <div class="grid md:grid-cols-4 gap-4">
+                        <div id="step1" class="bg-gray-800/50 border border-gray-700 rounded-xl p-5 text-center opacity-50 transition-all duration-300">
+                            <div id="circle1" class="w-12 h-12 bg-cyber-blue/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <span class="text-cyber-blue font-bold text-lg">1</span>
+                            </div>
+                            <h4 class="font-semibold text-sm mb-1">Hash Locally</h4>
+                            <p class="text-xs text-gray-400">SHA-1 in browser</p>
+                        </div>
+                        <div id="step2" class="bg-gray-800/50 border border-gray-700 rounded-xl p-5 text-center opacity-50 transition-all duration-300">
+                            <div id="circle2" class="w-12 h-12 bg-cyber-purple/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <span class="text-cyber-purple font-bold text-lg">2</span>
+                            </div>
+                            <h4 class="font-semibold text-sm mb-1">Split Hash</h4>
+                            <p class="text-xs text-gray-400">5 chars + 35 chars</p>
+                        </div>
+                        <div id="step3" class="bg-gray-800/50 border border-gray-700 rounded-xl p-5 text-center opacity-50 transition-all duration-300">
+                            <div id="circle3" class="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <span class="text-green-400 font-bold text-lg">3</span>
+                            </div>
+                            <h4 class="font-semibold text-sm mb-1">Send Prefix</h4>
+                            <p class="text-xs text-gray-400">Only 5 chars to API</p>
+                        </div>
+                        <div id="step4" class="bg-gray-800/50 border border-gray-700 rounded-xl p-5 text-center opacity-50 transition-all duration-300">
+                            <div id="circle4" class="w-12 h-12 bg-yellow-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <span class="text-yellow-400 font-bold text-lg">4</span>
+                            </div>
+                            <h4 class="font-semibold text-sm mb-1">Match Local</h4>
+                            <p class="text-xs text-gray-400">Full hash stays private</p>
+                        </div>
+                    </div>
+                    <div class="mt-8 bg-gray-800/30 border border-gray-700 rounded-xl p-6 font-mono text-sm">
+                        <div id="flowCode" class="space-y-3">
+                            <div id="flowLine1" class="flex items-center space-x-2 flow-line">
+                                <span class="text-gray-500">// Password:</span>
+                                <span id="flowPasswordText" class="text-white"></span>
+                            </div>
+                            <div id="arrow1" class="text-gray-600 flow-arrow">&#8595;</div>
+                            <div id="flowLine2" class="flex items-center space-x-2 flow-line">
+                                <span class="text-gray-500">// SHA-1:</span>
+                                <span id="flowHashText" class="text-red-400"></span>
+                            </div>
+                            <div id="arrow2" class="text-gray-600 flow-arrow">&#8595;</div>
+                            <div id="flowLine3" class="flex items-center space-x-2 flex-wrap flow-line">
+                                <span class="text-gray-500">// Send:</span>
+                                <span id="flowSendText" class="text-green-400"></span>
+                                <span class="text-gray-500 mx-1">| Keep:</span>
+                                <span id="flowKeepText" class="text-yellow-400"></span>
+                            </div>
+                            <div id="arrow3" class="text-gray-600 flow-arrow">&#8595;</div>
+                            <div id="flowLine4" class="flex items-center space-x-2 flow-line">
+                                <span class="text-gray-500">// Result:</span>
+                                <span id="flowResultText" class="ml-2"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Default State -->
+                <div id="kAnonDefault">
+                    <div class="grid md:grid-cols-4 gap-4">
+                        <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-5 text-center section-card">
+                            <div class="w-12 h-12 bg-cyber-blue/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <span class="text-cyber-blue font-bold text-lg">1</span>
+                            </div>
+                            <h4 class="font-semibold text-sm mb-1">Hash Locally</h4>
+                            <p class="text-xs text-gray-400">SHA-1 in browser</p>
+                        </div>
+                        <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-5 text-center section-card">
+                            <div class="w-12 h-12 bg-cyber-purple/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <span class="text-cyber-purple font-bold text-lg">2</span>
+                            </div>
+                            <h4 class="font-semibold text-sm mb-1">Split Hash</h4>
+                            <p class="text-xs text-gray-400">5 chars + 35 chars</p>
+                        </div>
+                        <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-5 text-center section-card">
+                            <div class="w-12 h-12 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <span class="text-green-400 font-bold text-lg">3</span>
+                            </div>
+                            <h4 class="font-semibold text-sm mb-1">Send Prefix</h4>
+                            <p class="text-xs text-gray-400">Only 5 chars to API</p>
+                        </div>
+                        <div class="bg-gray-800/50 border border-gray-700 rounded-xl p-5 text-center section-card">
+                            <div class="w-12 h-12 bg-yellow-500/20 rounded-full flex items-center justify-center mx-auto mb-3">
+                                <span class="text-yellow-400 font-bold text-lg">4</span>
+                            </div>
+                            <h4 class="font-semibold text-sm mb-1">Match Local</h4>
+                            <p class="text-xs text-gray-400">Full hash stays private</p>
+                        </div>
+                    </div>
+                    <div class="mt-8 bg-gray-800/30 border border-gray-700 rounded-xl p-6 font-mono text-xs">
+                        <div class="space-y-3">
+                            <div><span class="text-gray-500">// Password:</span><span class="text-white ml-2">"MySecretPassword123!"</span></div>
+                            <div class="text-gray-600">&#8595;</div>
+                            <div><span class="text-gray-500">// SHA-1:</span><span class="text-red-400 ml-2">"2DB8F1<span class="bg-red-900/50">2E9A7F3C4E1B9D6A8F2E1C3D4B5E6F7A8B9</span>"</span></div>
+                            <div class="text-gray-600">&#8595;</div>
+                            <div class="flex items-center space-x-2 flex-wrap">
+                                <span class="text-gray-500">// Send:</span>
+                                <span class="text-green-400 ml-2">"2D8F1"</span>
+                                <span class="text-gray-500 mx-1">| Keep:</span>
+                                <span class="text-yellow-400 ml-2">"2E9A7F3C4E1B9D6A8F2E1C3D4B5E6F7A8B9"</span>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-center text-gray-500 mt-6 text-sm">Click "Check Breach" to see the flow in action</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="py-16">
+        <div class="max-w-6xl mx-auto px-6">
+            <div class="max-w-2xl mx-auto text-center section-card bg-gray-900/50 border border-gray-800 rounded-2xl p-10 card-hover">
+                <div class="w-20 h-20 bg-gradient-to-br from-cyber-blue to-cyber-purple rounded-2xl flex items-center justify-center mx-auto mb-6 float">
+                    <svg class="w-10 h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                    </svg>
+                </div>
+                <h2 class="text-3xl font-bold mb-4">About This Project</h2>
+                <p class="text-gray-300 text-lg leading-relaxed mb-6">
+                    I <span class="text-cyber-blue font-semibold">Farhan Naser</span> built this project to showcase my understanding of
+                    <span class="text-cyber-purple">password security</span>,
+                    <span class="text-green-400">k-Anonymity</span>,
+                    <span class="text-yellow-400">SHA-1 hashing</span>,
+                    <span class="text-pink-400">web cryptography</span>, and
+                    <span class="text-cyan-400">cybersecurity concepts</span>.
+                </p>
+                <p class="text-gray-400">
+                    All analysis happens locally in your browser — your password never leaves your device. This demonstrates zero-knowledge security principles.
+                </p>
+                <div class="mt-8 flex flex-wrap justify-center gap-3">
+                    <span class="px-3 py-1 bg-cyber-blue/20 text-cyber-blue text-sm rounded-full">Tailwind CSS</span>
+                    <span class="px-3 py-1 bg-cyber-purple/20 text-cyber-purple text-sm rounded-full">JavaScript</span>
+                    <span class="px-3 py-1 bg-green-500/20 text-green-400 text-sm rounded-full">Web Crypto API</span>
+                    <span class="px-3 py-1 bg-yellow-500/20 text-yellow-400 text-sm rounded-full">zxcvbn</span>
+                    <span class="px-3 py-1 bg-pink-500/20 text-pink-400 text-sm rounded-full">HIBP API</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-8 border-t border-gray-800">
+        <div class="max-w-6xl mx-auto px-6">
+            <div class="flex flex-col md:flex-row items-center justify-between">
+                <div class="flex items-center space-x-2 mb-4 md:mb-0">
+                    <div class="w-8 h-8 bg-gradient-to-br from-cyber-blue to-cyber-purple rounded-lg flex items-center justify-center transition-transform duration-300 hover:scale-110">
+                        <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                        </svg>
+                    </div>
+                    <span class="font-semibold">ShieldCheck</span>
+                </div>
+                <p class="text-gray-500 text-sm">Built by Farhan Naser • Zero-knowledge security</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Attack Simulator Modal -->
+    <div id="attackModal" class="fixed inset-0 z-50 hidden modal-backdrop flex items-center justify-center p-4">
+        <div class="bg-gray-900 border border-gray-700 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
+            <div class="p-6 border-b border-gray-800 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-red-500/20 rounded-lg flex items-center justify-center">
+                        <svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold">Attack Simulation</h3>
+                </div>
+                <button id="closeAttackModal" class="text-gray-400 hover:text-white transition-colors p-2">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="p-6">
+                <!-- Terminal -->
+                <div class="bg-black/50 border border-gray-700 rounded-xl p-4 font-mono text-sm h-64 relative">
+                    <div class="absolute top-2 left-4 flex space-x-2 z-10">
+                        <span class="w-3 h-3 bg-red-500 rounded-full"></span>
+                        <span class="w-3 h-3 bg-yellow-500 rounded-full"></span>
+                        <span class="w-3 h-3 bg-green-500 rounded-full"></span>
+                    </div>
+                    <div id="terminalOutput" class="pt-8 space-y-1 h-full overflow-y-auto" style="max-height: 180px;">
+                        <div class="text-gray-500">$ initializing brute-force attack...</div>
+                    </div>
+                    <div id="terminalCursor" class="inline-block w-2 h-4 bg-green-400 ml-1 cursor-blink"></div>
+                </div>
+                <!-- Stats -->
+                <div class="mt-6 grid grid-cols-3 gap-4 text-center">
+                    <div class="bg-gray-800/50 rounded-xl p-4">
+                        <div class="text-2xl font-bold font-mono text-cyber-blue" id="attemptCount">0</div>
+                        <div class="text-xs text-gray-500">Attempts</div>
+                    </div>
+                    <div class="bg-gray-800/50 rounded-xl p-4">
+                        <div class="text-2xl font-bold font-mono text-cyber-purple" id="timeElapsed">0.0s</div>
+                        <div class="text-xs text-gray-500">Time Elapsed</div>
+                    </div>
+                    <div class="bg-gray-800/50 rounded-xl p-4">
+                        <div class="text-2xl font-bold font-mono text-green-400" id="charsCracked">0</div>
+                        <div class="text-xs text-gray-500">Chars Cracked</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Privacy Inspector Modal -->
+    <div id="privacyModal" class="fixed inset-0 z-50 hidden modal-backdrop flex items-center justify-center p-4">
+        <div class="bg-gray-900 border border-gray-700 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden shadow-2xl">
+            <div class="p-6 border-b border-gray-800 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-yellow-500/20 rounded-lg flex items-center justify-center">
+                        <svg class="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+                        </svg>
+                    </div>
+                    <h3 class="text-xl font-bold">Privacy Inspector</h3>
+                </div>
+                <button id="closePrivacyModal" class="text-gray-400 hover:text-white transition-colors p-2">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto max-h-[70vh]">
+                <div class="space-y-4">
+                    <div class="bg-black/30 border border-gray-700 rounded-xl p-4 font-mono text-xs">
+                        <div class="text-gray-500 mb-2">// Step 1: Enter a password</div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-green-400">></span>
+                            <span class="text-white" id="privacyPassword">Enter password above</span>
+                        </div>
+                    </div>
+                    <div class="text-center text-gray-600">&#8595;</div>
+                    <div class="bg-black/30 border border-gray-700 rounded-xl p-4 font-mono text-xs">
+                        <div class="text-gray-500 mb-2">// Step 2: SHA-1 Hash (Browser Only)</div>
+                        <div class="flex items-center space-x-2 flex-wrap">
+                            <span class="text-green-400">></span>
+                            <span class="text-red-400" id="privacyHash">—</span>
+                        </div>
+                        <div class="mt-2 text-green-500 text-xs">&#10003; Hash computed locally</div>
+                    </div>
+                    <div class="text-center text-gray-600">&#8595;</div>
+                    <div class="bg-black/30 border border-gray-700 rounded-xl p-4 font-mono text-xs">
+                        <div class="text-gray-500 mb-2">// Step 3: Split Hash</div>
+                        <div class="flex items-center space-x-4 flex-wrap">
+                            <div>
+                                <span class="text-gray-500">Prefix:</span>
+                                <span class="text-green-400 ml-1" id="privacyPrefix">—</span>
+                                <span class="text-xs text-gray-600 ml-1">(sent to API)</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-500">Suffix:</span>
+                                <span class="text-yellow-400 ml-1" id="privacySuffix">—</span>
+                                <span class="text-xs text-gray-600 ml-1">(kept local)</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-center text-gray-600">&#8595;</div>
+                    <div class="bg-black/30 border border-gray-700 rounded-xl p-4 font-mono text-xs">
+                        <div class="text-gray-500 mb-2">// Step 4: API Response</div>
+                        <div class="text-gray-400" id="privacyApiResponse">Enter password to see API call</div>
+                        <div class="mt-2 text-xs text-gray-600">API sees only the prefix, cannot identify password</div>
+                    </div>
+                </div>
+                <div class="mt-6 p-4 bg-green-500/10 border border-green-500/30 rounded-xl">
+                    <p class="text-green-400 text-sm font-medium flex items-center space-x-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span>Your password remains 100% private</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============ WORD LIST FOR PASSPHRASE ============
+        const wordList = [
+            'apple', 'brave', 'crane', 'delta', 'eagle', 'flame', 'grape', 'harbor', 'ivory', 'jazz',
+            'karma', 'lemon', 'maple', 'noble', 'ocean', 'piano', 'queen', 'river', 'storm', 'tiger',
+            'ultra', 'vivid', 'wheat', 'xenon', 'yacht', 'zebra', 'anchor', 'blaze', 'comet', 'dream',
+            'ember', 'frost', 'globe', 'honor', 'image', 'joker', 'knife', 'lunar', 'metal', 'nectar',
+            'orbit', 'prism', 'quest', 'radar', 'solar', 'tempo', 'unity', 'valor', 'windy', 'xerox',
+            'youth', 'zesty', 'arrow', 'brush', 'cliff', 'dwarf', 'forge', 'giant', 'haste', 'index',
+            'jasper', 'kayak', 'llama', 'mango', 'nexus', 'ozone', 'panda', 'quartz', 'robin', 'sphinx',
+            'torch', 'urban', 'viper', 'whale', 'axiom', 'bliss', 'coral', 'dusk', 'flora', 'glyph',
+            'haze', 'igloo', 'jelly', 'kiosk', 'latch', 'mocha', 'ninja', 'oasis', 'pearl', 'quirk',
+            'realm', 'shelf', 'thorn', 'umbra', 'vortex', 'wisp', 'yonder', 'zinc', 'amber', 'bronze',
+            'cider', 'dune', 'evoke', 'flint', 'grove', 'hazel', 'ionic', 'joust', 'kudos', 'lumen',
+            'myrrh', 'nudge', 'olive', 'plumb', 'quill', 'ridge', 'sable', 'tide', 'usher', 'vinyl',
+            'waltz', 'yacht', 'zonal', 'acorn', 'bloom', 'cedar', 'diver', 'eater', 'fable', 'gazer'
+        ];
+
+        // ============ DOM ELEMENTS ============
+        const passwordInput = document.getElementById('password');
+        const togglePasswordBtn = document.getElementById('togglePassword');
+        const eyeIcon = document.getElementById('eyeIcon');
+        const eyeOffIcon = document.getElementById('eyeOffIcon');
+        const strengthBar = document.getElementById('strengthBar');
+        const strengthLabel = document.getElementById('strengthLabel');
+        const checkBreachBtn = document.getElementById('checkBreach');
+        const generatePassphraseBtn = document.getElementById('generatePassphrase');
+        const simulateAttackBtn = document.getElementById('simulateAttack');
+        const openPrivacyBtn = document.getElementById('openPrivacy');
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const feedbackList = document.getElementById('feedbackList');
+        const attackModal = document.getElementById('attackModal');
+        const privacyModal = document.getElementById('privacyModal');
+        const closeAttackModal = document.getElementById('closeAttackModal');
+        const closePrivacyModal = document.getElementById('closePrivacyModal');
+
+        // Breach elements
+        const breachInitial = document.getElementById('breachInitial');
+        const breachLoading = document.getElementById('breachLoading');
+        const breachSafe = document.getElementById('breachSafe');
+        const breachFound = document.getElementById('breachFound');
+        const breachError = document.getElementById('breachError');
+        const breachCount = document.getElementById('breachCount');
+        const errorMessage = document.getElementById('errorMessage');
+        const hashPreview = document.getElementById('hashPreview');
+
+        // Crack time elements
+        const crackLaptop = document.getElementById('crackLaptop');
+        const crackGPU = document.getElementById('crackGPU');
+        const crackCloud = document.getElementById('crackCloud');
+
+        // Pattern elements
+        const patternL33t = document.getElementById('patternL33t');
+        const patternL33tText = document.getElementById('patternL33tText');
+        const patternKeyboard = document.getElementById('patternKeyboard');
+        const patternKeyboardText = document.getElementById('patternKeyboardText');
+        const patternYear = document.getElementById('patternYear');
+        const patternYearText = document.getElementById('patternYearText');
+        const patternNone = document.getElementById('patternNone');
+
+        // Privacy elements
+        const privacyPassword = document.getElementById('privacyPassword');
+        const privacyHash = document.getElementById('privacyHash');
+        const privacyPrefix = document.getElementById('privacyPrefix');
+        const privacySuffix = document.getElementById('privacySuffix');
+        const privacyApiResponse = document.getElementById('privacyApiResponse');
+
+        // Strength config
+        const strengthConfig = [
+            { label: 'Very Weak', color: 'bg-red-500', textColor: 'text-red-400', width: '20%' },
+            { label: 'Weak', color: 'bg-orange-500', textColor: 'text-orange-400', width: '40%' },
+            { label: 'Fair', color: 'bg-yellow-500', textColor: 'text-yellow-400', width: '60%' },
+            { label: 'Strong', color: 'bg-lime-500', textColor: 'text-lime-400', width: '80%' },
+            { label: 'Very Strong', color: 'bg-green-500', textColor: 'text-green-400', width: '100%' }
+        ];
+
+        // Hardware benchmarks (hashes per second)
+        const hardwareBenchmarks = {
+            laptop: 1e4,      // 10,000 H/s
+            gpu: 2e5,         // 200,000 H/s (RTX 4090)
+            cloud: 1e11       // 100 Billion H/s
+        };
+
+        // ============ UTILITY FUNCTIONS ============
+        function arrayBufferToHex(buffer) {
+            const byteArray = new Uint8Array(buffer);
+            return Array.from(byteArray).map(byte => byte.toString(16).padStart(2, '0').toUpperCase()).join('');
+        }
+
+        async function sha1(message) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(message);
+            const hashBuffer = await crypto.subtle.digest('SHA-1', data);
+            return arrayBufferToHex(hashBuffer);
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function formatNumber(num) {
+            if (num >= 1e15) return (num / 1e15).toFixed(1) + 'Q';
+            if (num >= 1e12) return (num / 1e12).toFixed(1) + 'T';
+            if (num >= 1e9) return (num / 1e9).toFixed(1) + 'B';
+            if (num >= 1e6) return (num / 1e6).toFixed(1) + 'M';
+            if (num >= 1e3) return (num / 1e3).toFixed(1) + 'K';
+            return num.toString();
+        }
+
+        function formatTime(seconds) {
+            if (seconds < 1) return 'instant';
+            if (seconds < 60) return seconds.toFixed(1) + 's';
+            if (seconds < 3600) return (seconds / 60).toFixed(1) + 'min';
+            if (seconds < 86400) return (seconds / 86400).toFixed(1) + 'days';
+            if (seconds < 31536000) return (seconds / 31536000).toFixed(1) + 'years';
+            if (seconds < 31536000 * 1000) return (seconds / 31536000).toFixed(0) + 'years';
+            if (seconds < 31536000 * 1e6) return (seconds / 31536000 / 1000000).toFixed(0) + 'M years';
+            if (seconds < 31536000 * 1e9) return (seconds / 31536000 / 1e9).toFixed(0) + 'B years';
+            return (seconds / 31536000 / 1e12).toFixed(0) + 'Trillion years';
+        }
+
+        // ============ PATTERN DETECTION ============
+        function detectL33tSpeak(password) {
+            // Check for common l33t substitutions: 0=o, 1=i, 3=e, 4=a, 5=s, 7=t, @=a, $=s
+            const l33tRegex = /[0-3@$]+/g;
+            const matches = password.match(l33tRegex);
+            if (matches) {
+                // Show what the substitutions actually mean
+                const examples = matches.slice(0, 2).map(m => {
+                    let decoded = m.replace(/0/g, 'o').replace(/1/g, 'i').replace(/3/g, 'e')
+                                   .replace(/4/g, 'a').replace(/5/g, 's').replace(/7/g, 't')
+                                   .replace(/@/g, 'a').replace(/\$/g, 's');
+                    return '"' + m + '" → "' + decoded + '"';
+                }).join(', ');
+                return 'Substitutions like ' + examples + ' are easy to guess';
+            }
+            return null;
+        }
+
+        function detectKeyboardPatterns(password) {
+            const keyboardPatterns = ['qwerty', 'qwertyuiop', 'asdfgh', 'asdfghjkl', 'zxcvbn', 'zxcvbnm', '1234567890', 'qazwsx', 'qazwsxedc', '1qaz2wsx', 'qa1ws2', 'poiuy', 'lkjhgf'];
+            const lower = password.toLowerCase();
+            for (const pattern of keyboardPatterns) {
+                if (lower.includes(pattern)) {
+                    return 'Common keyboard walk "' + pattern + '" is in top attack lists';
+                }
+            }
+            return null;
+        }
+
+        function detectCommonYears(password) {
+            const yearRegex = /(19[7-9]\d|20[0-2]\d)/g;
+            const matches = password.match(yearRegex);
+            if (matches) {
+                const years = [...new Set(matches)].slice(0, 3).join(', ');
+                return 'Birth year ' + years + ' is easy to find on social media';
+            }
+            return null;
+        }
+            }
+            return null;
+        }
+
+        // ============ CRACK TIME CALCULATION ============
+        function calculateCrackTimes(password) {
+            if (!password) {
+                crackLaptop.textContent = '—';
+                crackGPU.textContent = '—';
+                crackCloud.textContent = '—';
+                return;
+            }
+
+            // Use zxcvbn's actual guess count for accurate calculation
+            const result = zxcvbn(password);
+            const guesses = result.guesses;
+
+            // Time for each hardware
+            const laptopTime = guesses / hardwareBenchmarks.laptop;
+            const gpuTime = guesses / hardwareBenchmarks.gpu;
+            const cloudTime = guesses / hardwareBenchmarks.cloud;
+
+            crackLaptop.textContent = formatTime(laptopTime);
+            crackGPU.textContent = formatTime(gpuTime);
+            crackCloud.textContent = formatTime(cloudTime);
+        }
+
+        // ============ UPDATE STRENGTH METER ============
+        function updateStrengthMeter(password) {
+            if (!password) {
+                strengthBar.style.width = '0%';
+                strengthBar.className = 'h-full rounded-full transition-all duration-300 strength-glow progress-stripes';
+                strengthLabel.textContent = 'Enter a password';
+                strengthLabel.className = 'text-sm font-medium text-gray-500';
+                scoreDisplay.textContent = '—';
+                scoreDisplay.className = 'text-4xl font-bold font-mono text-gray-600';
+                feedbackList.innerHTML = '<div class="text-gray-500 text-sm italic">Analysis will appear here</div>';
+                checkBreachBtn.disabled = true;
+                simulateAttackBtn.disabled = true;
+                calculateCrackTimes('');
+                hideAllPatterns();
+                return;
+            }
+
+            const result = zxcvbn(password);
+            const config = strengthConfig[result.score];
+
+            strengthBar.style.width = config.width;
+            strengthBar.className = 'h-full rounded-full transition-all duration-300 strength-glow progress-stripes ' + config.color;
+            strengthLabel.textContent = config.label;
+            strengthLabel.className = 'text-sm font-medium ' + config.textColor;
+            scoreDisplay.textContent = result.score;
+            scoreDisplay.className = 'text-4xl font-bold font-mono ' + config.textColor;
+
+            // Calculate crack times
+            calculateCrackTimes(password);
+
+            // Pattern detection
+            updatePatternAnalysis(password);
+
+            // Generate feedback
+            let feedbackHTML = '';
+
+            if (result.sequence.length > 0) {
+                const patterns = [...new Set(result.sequence.map(item => item.pattern))];
+                if (patterns.includes('dictionary') || patterns.includes('spatial')) {
+                    feedbackHTML += '<div class="flex items-start space-x-2 text-yellow-500">' +
+                        '<svg class="w-4 h-4 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>' +
+                        '<span class="text-sm">Common pattern detected</span></div>';
+                }
+            }
+
+            const crackTime = result.crack_times_display.offline_slow_hashing_1e4_per_second;
+            feedbackHTML += '<div class="flex items-center space-x-2 text-gray-400">' +
+                '<svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>' +
+                '<span class="text-sm">Crack time: ' + crackTime + '</span></div>';
+
+            if (result.feedback.suggestions && result.feedback.suggestions.length > 0) {
+                result.feedback.suggestions.slice(0, 2).forEach(suggestion => {
+                    feedbackHTML += '<div class="flex items-start space-x-2 text-cyber-blue">' +
+                        '<svg class="w-4 h-4 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>' +
+                        '<span class="text-sm">' + suggestion + '</span></div>';
+                });
+            }
+
+            feedbackList.innerHTML = feedbackHTML || '<div class="text-green-400 text-sm">&#10003; No obvious weaknesses found</div>';
+
+            checkBreachBtn.disabled = false;
+            simulateAttackBtn.disabled = false;
+        }
+
+        function updatePatternAnalysis(password) {
+            const l33t = detectL33tSpeak(password);
+            const keyboard = detectKeyboardPatterns(password);
+            const year = detectCommonYears(password);
+
+            hideAllPatterns();
+
+            if (l33t || keyboard || year) {
+                patternNone.classList.add('hidden');
+                if (l33t) {
+                    patternL33t.classList.remove('hidden');
+                    patternL33tText.textContent = l33t;
+                }
+                if (keyboard) {
+                    patternKeyboard.classList.remove('hidden');
+                    patternKeyboardText.textContent = keyboard;
+                }
+                if (year) {
+                    patternYear.classList.remove('hidden');
+                    patternYearText.textContent = year;
+                }
+            } else {
+                patternNone.classList.remove('hidden');
+            }
+        }
+
+        function hideAllPatterns() {
+            patternL33t.classList.add('hidden');
+            patternKeyboard.classList.add('hidden');
+            patternYear.classList.add('hidden');
+            patternNone.classList.remove('hidden');
+        }
+
+        // ============ PASSPHRASE ENHANCER ============
+        function generatePassphrase() {
+            const originalPassword = passwordInput.value;
+
+            if (!originalPassword) {
+                // If no password, generate a memorable passphrase
+                const wordCount = 4;
+                let words = [];
+                for (let i = 0; i < wordCount; i++) {
+                    words.push(wordList[Math.floor(Math.random() * wordList.length)]);
+                }
+                const passphrase = words.join('-');
+                const entropy = Math.log2(Math.pow(wordList.length, wordCount));
+
+                passwordInput.type = 'text';
+                passwordInput.value = passphrase;
+                eyeIcon.classList.add('hidden');
+                eyeOffIcon.classList.remove('hidden');
+
+                updateStrengthMeter(passphrase);
+
+                // Show entropy info
+                feedbackList.innerHTML = '<div class="flex items-start space-x-2 text-green-400">' +
+                    '<svg class="w-4 h-4 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>' +
+                    '<span class="text-sm">Generated memorable passphrase with <span class="font-mono">' + entropy.toFixed(1) + '</span> bits entropy</span></div>';
+                return;
+            }
+
+            // Enhance the existing password: capitalize first letter, add a number and symbol
+            let enhanced = originalPassword;
+
+            // Keep first 2-3 characters as-is for recognizability
+            const keepCount = Math.min(3, Math.floor(originalPassword.length / 2));
+            const kept = originalPassword.substring(0, keepCount);
+
+            // Capitalize first letter if it's a letter
+            const firstChar = enhanced.charAt(0);
+            if (firstChar.match(/[a-z]/)) {
+                enhanced = firstChar.toUpperCase() + enhanced.substring(1);
+            }
+
+            // Add random number and symbol at the end
+            const numbers = '123456789';
+            const symbols = '!@#$%^&*';
+            const randomNum = numbers[Math.floor(Math.random() * numbers.length)];
+            const randomSym = symbols[Math.floor(Math.random() * symbols.length)];
+            enhanced += randomNum + randomSym;
+
+            // Add a memorable word suffix
+            const suffixWord = wordList[Math.floor(Math.random() * wordList.length)];
+            enhanced = enhanced + '-' + suffixWord;
+
+            passwordInput.type = 'text';
+            passwordInput.value = enhanced;
+            eyeIcon.classList.add('hidden');
+            eyeOffIcon.classList.remove('hidden');
+
+            updateStrengthMeter(enhanced);
+
+            // Show what was kept and what was added
+            feedbackList.innerHTML = '<div class="flex items-start space-x-2 text-green-400">' +
+                '<svg class="w-4 h-4 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>' +
+                '<span class="text-sm">Enhanced! Kept "<span class="font-mono text-white">' + escapeHtml(kept) + '</span>" + added capitals, numbers, symbol & word</span></div>';
+        }
+
+        // ============ ATTACK SIMULATOR ============
+        async function simulateAttack() {
+            const password = passwordInput.value;
+            if (!password) return;
+
+            attackModal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+
+            const terminalOutput = document.getElementById('terminalOutput');
+            const attemptCount = document.getElementById('attemptCount');
+            const timeElapsed = document.getElementById('timeElapsed');
+            const charsCracked = document.getElementById('charsCracked');
+
+            terminalOutput.innerHTML = '<div class="text-gray-500">$ initializing brute-force attack...</div>';
+            await sleep(500);
+            terminalOutput.innerHTML += '<div class="text-green-400">$ target password: "' + password.split('').map(c => c === ' ' ? ' ' : '*').join('') + '"</div>';
+            await sleep(300);
+            terminalOutput.innerHTML += '<div class="text-yellow-400">$ hash rate: 200,000 H/s (RTX 4090)</div>';
+            await sleep(300);
+            terminalOutput.innerHTML += '<div class="text-gray-500">$ starting attack...</div>';
+            await sleep(500);
+
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+            let attempts = 0;
+            let cracked = 0;
+            let currentAttempt = '';
+            const startTime = Date.now();
+
+            const interval = setInterval(() => {
+                attempts++;
+                currentAttempt = '';
+                for (let i = 0; i < password.length; i++) {
+                    if (i < cracked) {
+                        currentAttempt += password[i];
+                    } else {
+                        currentAttempt += chars[Math.floor(Math.random() * chars.length)];
+                    }
+                }
+
+                if (attempts % 5 === 0) {
+                    terminalOutput.innerHTML += '<div class="text-red-400">$ attempt ' + formatNumber(attempts) + ': ' + currentAttempt + '</div>';
+                    terminalOutput.scrollTop = terminalOutput.scrollHeight;
+                }
+
+                attemptCount.textContent = formatNumber(attempts);
+                timeElapsed.textContent = ((Date.now() - startTime) / 1000).toFixed(1) + 's';
+
+                // Randomly crack a character
+                if (cracked < password.length && Math.random() < 0.1) {
+                    cracked++;
+                    charsCracked.textContent = cracked + '/' + password.length;
+                    terminalOutput.innerHTML += '<div class="text-green-400">$ char ' + cracked + ' matched: "' + password[cracked - 1] + '"</div>';
+                }
+
+                if (cracked >= password.length) {
+                    clearInterval(interval);
+                    terminalOutput.innerHTML += '<div class="text-green-400 mt-4">$ PASSWORD CRACKED: "' + password + '"</div>';
+                    terminalOutput.innerHTML += '<div class="text-gray-500">$ total attempts: ' + formatNumber(attempts) + '</div>';
+                    terminalOutput.innerHTML += '<div class="text-gray-500">$ time elapsed: ' + ((Date.now() - startTime) / 1000).toFixed(2) + 's</div>';
+                }
+            }, 10);
+        }
+
+        // ============ PRIVACY INSPECTOR ============
+        async function updatePrivacyInspector() {
+            const password = passwordInput.value;
+
+            if (!password) {
+                privacyPassword.textContent = 'Enter password above';
+                privacyHash.textContent = '—';
+                privacyPrefix.textContent = '—';
+                privacySuffix.textContent = '—';
+                privacyApiResponse.textContent = 'Enter password to see API call';
+                return;
+            }
+
+            const masked = password.substring(0, 2) + '•'.repeat(Math.min(password.length - 4, 6)) + password.substring(password.length - 2);
+            privacyPassword.textContent = '"' + masked + '"';
+
+            const hash = await sha1(password);
+            privacyHash.textContent = hash;
+
+            const prefix = hash.substring(0, 5);
+            const suffix = hash.substring(5);
+
+            privacyPrefix.textContent = '"' + prefix + '"';
+            privacySuffix.textContent = '"' + suffix + '..."';
+
+            privacyApiResponse.textContent = 'GET /range/' + prefix + ' -> Received ~500 matching hashes';
+        }
+
+        // ============ BREACH CHECK ============
+        function showKAnonFlow() {
+            document.getElementById('kAnonDefault').classList.add('hidden');
+            document.getElementById('kAnonFlow').classList.remove('hidden');
+            // Auto-scroll to the section
+            document.getElementById('how-it-works').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+
+        function resetKAnonFlow() {
+            document.getElementById('kAnonDefault').classList.remove('hidden');
+            document.getElementById('kAnonFlow').classList.add('hidden');
+            // Reset circles
+            for (let i = 1; i <= 4; i++) {
+                const circle = document.getElementById('circle' + i);
+                circle.classList.remove('step-glow-once');
+                circle.style.animation = 'none';
+                circle.offsetHeight; // trigger reflow
+            }
+            // Reset flow lines - clear content
+            document.getElementById('flowPasswordText').textContent = '';
+            document.getElementById('flowLine1').classList.remove('show');
+            document.getElementById('arrow1').classList.remove('show');
+            document.getElementById('flowHashText').textContent = '';
+            document.getElementById('flowLine2').classList.remove('show');
+            document.getElementById('arrow2').classList.remove('show');
+            document.getElementById('flowSendText').textContent = '';
+            document.getElementById('flowKeepText').textContent = '';
+            document.getElementById('flowLine3').classList.remove('show');
+            document.getElementById('arrow3').classList.remove('show');
+            document.getElementById('flowResultText').textContent = '';
+            document.getElementById('flowLine4').classList.remove('show');
+        }
+
+        async function typeText(element, text, speed = 20) {
+            element.textContent = '';
+            for (let i = 0; i < text.length; i++) {
+                element.textContent += text[i];
+                await sleep(speed);
+            }
+        }
+
+        async function animateStep(stepNum, config) {
+            // First glow the step circle
+            const circle = document.getElementById('circle' + stepNum);
+            circle.style.animation = '';
+            circle.classList.add('step-glow-once');
+
+            await sleep(300);
+
+            // Update step visuals
+            for (let i = 1; i <= 4; i++) {
+                const s = document.getElementById('step' + i);
+                if (i < stepNum) {
+                    s.classList.add('step-complete');
+                    s.classList.remove('opacity-50');
+                } else if (i === stepNum) {
+                    s.classList.remove('opacity-50');
+                    s.classList.add('step-complete');
+                } else {
+                    s.classList.add('opacity-50');
+                    s.classList.remove('step-complete');
+                }
+            }
+
+            await sleep(300);
+
+            // Reveal content with typing effect based on step
+            if (stepNum === 1 && config) {
+                const masked = config.password.substring(0, 2) + '•'.repeat(Math.min(config.password.length - 4, 8)) + config.password.substring(config.password.length - 2);
+                const fullText = '"' + escapeHtml(masked) + '"';
+                document.getElementById('flowLine1').classList.add('show');
+                await typeText(document.getElementById('flowPasswordText'), fullText, 30);
+                await sleep(150);
+                document.getElementById('arrow1').classList.add('show');
+            }
+
+            if (stepNum === 2 && config) {
+                const fullText = '"' + escapeHtml(config.hash) + '"';
+                document.getElementById('flowLine2').classList.add('show');
+                await typeText(document.getElementById('flowHashText'), fullText, 8);
+                await sleep(150);
+                document.getElementById('arrow2').classList.add('show');
+            }
+
+            if (stepNum === 3 && config) {
+                document.getElementById('flowLine3').classList.add('show');
+                await typeText(document.getElementById('flowSendText'), '"' + escapeHtml(config.prefix) + '"', 15);
+                await sleep(100);
+                await typeText(document.getElementById('flowKeepText'), '"' + escapeHtml(config.suffix) + '"', 5);
+                await sleep(150);
+                document.getElementById('arrow3').classList.add('show');
+            }
+
+            if (stepNum === 4 && config) {
+                document.getElementById('flowLine4').classList.add('show');
+                if (config.result !== undefined) {
+                    const resultColor = config.result === 0 ? 'text-green-400' : 'text-red-400';
+                    const resultText = config.result === 0 ? 'NOT found (safe)' : 'FOUND in ' + config.result.toLocaleString() + ' breaches!';
+                    await typeText(document.getElementById('flowResultText'), resultText, 40);
+                    document.getElementById('flowResultText').className = 'ml-2 ' + resultColor;
+                }
+            }
+
+            // Wait for glow animation to finish
+            await sleep(400);
+        }
+
+        async function checkBreach(password) {
+            showKAnonFlow();
+            showBreachState('loading');
+
+            await animateStep(1, { password: password });
+
+            try {
+                const hash = await sha1(password);
+                hashPreview.textContent = 'SHA1(' + hash.substring(0, 5) + '......)';
+
+                await animateStep(2, { password: password, hash: hash });
+
+                const prefix = hash.substring(0, 5);
+                const suffix = hash.substring(5).toUpperCase();
+
+                await animateStep(3, { prefix: prefix, suffix: suffix });
+
+                const response = await fetch('https://api.pwnedpasswords.com/range/' + prefix, {
+                    headers: { 'Add-Padding': 'true' }
+                });
+
+                if (!response.ok) {
+                    throw new Error('API returned status ' + response.status);
+                }
+
+                const responseText = await response.text();
+                const lines = responseText.split('\n');
+                let foundCount = 0;
+
+                for (const line of lines) {
+                    const parts = line.split(':');
+                    const hashSuffix = parts[0].trim().toUpperCase();
+                    const count = parseInt(parts[1].trim(), 10);
+                    if (hashSuffix === suffix) {
+                        foundCount = count;
+                        break;
+                    }
+                }
+
+                await animateStep(4, { result: foundCount });
+
+                // After step 4, wait 2 seconds then scroll up to dashboard
+                await sleep(2000);
+                document.getElementById('dashboard').scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                if (foundCount > 0) {
+                    breachCount.textContent = foundCount.toLocaleString();
+                    showBreachState('found');
+                } else {
+                    showBreachState('safe');
+                }
+
+            } catch (error) {
+                console.error('Breach check failed:', error);
+                errorMessage.textContent = error.message || 'Unable to check breach status';
+                showBreachState('error');
+            }
+        }
+
+        function showBreachState(state) {
+            breachInitial.classList.add('hidden');
+            breachLoading.classList.add('hidden');
+            breachSafe.classList.add('hidden');
+            breachFound.classList.add('hidden');
+            breachError.classList.add('hidden');
+
+            switch (state) {
+                case 'initial': breachInitial.classList.remove('hidden'); break;
+                case 'loading': breachLoading.classList.remove('hidden'); break;
+                case 'safe': breachSafe.classList.remove('hidden'); break;
+                case 'found': breachFound.classList.remove('hidden'); break;
+                case 'error': breachError.classList.remove('hidden'); break;
+            }
+        }
+
+        function togglePasswordVisibility() {
+            const isPassword = passwordInput.type === 'password';
+            passwordInput.type = isPassword ? 'text' : 'password';
+            eyeIcon.classList.toggle('hidden', !isPassword);
+            eyeOffIcon.classList.toggle('hidden', isPassword);
+        }
+
+        // ============ EVENT LISTENERS ============
+        passwordInput.addEventListener('input', (e) => {
+            updateStrengthMeter(e.target.value);
+            if (e.target.value) {
+                showBreachState('initial');
+                updatePrivacyInspector();
+            } else {
+                showBreachState('initial');
+                resetKAnonFlow();
+                privacyPassword.textContent = 'Enter password above';
+                privacyHash.textContent = '—';
+                privacyPrefix.textContent = '—';
+                privacySuffix.textContent = '—';
+                privacyApiResponse.textContent = 'Enter password to see API call';
+            }
+        });
+
+        togglePasswordBtn.addEventListener('click', togglePasswordVisibility);
+
+        checkBreachBtn.addEventListener('click', () => {
+            const password = passwordInput.value;
+            if (password) checkBreach(password);
+        });
+
+        generatePassphraseBtn.addEventListener('click', generatePassphrase);
+
+        simulateAttackBtn.addEventListener('click', simulateAttack);
+
+        openPrivacyBtn.addEventListener('click', () => {
+            updatePrivacyInspector();
+            privacyModal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        });
+
+        closeAttackModal.addEventListener('click', () => {
+            attackModal.classList.add('hidden');
+            document.body.style.overflow = '';
+        });
+
+        closePrivacyModal.addEventListener('click', () => {
+            privacyModal.classList.add('hidden');
+            document.body.style.overflow = '';
+        });
+
+        // Close modals on backdrop click
+        attackModal.addEventListener('click', (e) => {
+            if (e.target === attackModal) {
+                attackModal.classList.add('hidden');
+                document.body.style.overflow = '';
+            }
+        });
+
+        privacyModal.addEventListener('click', (e) => {
+            if (e.target === privacyModal) {
+                privacyModal.classList.add('hidden');
+                document.body.style.overflow = '';
+            }
+        });
+
+        // Close modals on Escape
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                attackModal.classList.add('hidden');
+                privacyModal.classList.add('hidden');
+                document.body.style.overflow = '';
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            passwordInput.focus();
+        });
+    </script>
+</body>
+</html>
