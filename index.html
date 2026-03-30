@@ -932,9 +932,6 @@
             }
             return null;
         }
-            }
-            return null;
-        }
 
         // ============ CRACK TIME CALCULATION ============
         function calculateCrackTimes(password) {
@@ -1122,6 +1119,471 @@
         }
 
         // ============ ATTACK SIMULATOR ============
+
+        // Hardware benchmarks (hashes per second)
+        const attackHardware = {
+            laptop: 1e4,      // 10,000 H/s
+            gpu: 2e5,         // 200,000 H/s (RTX 4090)
+            cloud: 1e11       // 100 Billion H/s
+        };
+
+        // Common passwords sorted by popularity (top 80 for simulation)
+        const commonPasswords = [
+            'password', '123456', '12345678', 'qwerty', 'abc123', 'monkey', '1234567',
+            'letmein', 'trustno1', 'dragon', 'baseball', 'iloveyou', 'master', 'sunshine',
+            'ashley', 'bailey', 'passw0rd', 'shadow', '123123', '654321', 'superman',
+            'qazwsx', 'michael', 'football', 'password1', 'password123', 'welcome',
+            'jesus', 'ninja', 'mustang', 'admin', 'admin123', 'login', 'hello',
+            'charlie', 'donald', 'hello123', 'pass123', 'starwars', 'freedom',
+            'whatever', 'jordan', 'jennifer', 'hunter', 'amanda', 'joshua', 'biteme',
+            'matthew', 'daniel', 'andrew', 'taylor', 'jessica', 'thomas', 'robert',
+            'chicken', 'password12', 'qwerty123', 'batman', 'trustme', 'access',
+            'killer', 'mother', 'jordan23', 'rockyou', 'princess', 'qwerty1',
+            'football1', 'maggie', 'pepper', 'zxcvbn', 'zxcvbnm', 'internet', 'computer',
+            'secret', 'orange', 'silver', 'golden', 'purple', 'yellow', 'diamond',
+            ' platinum', 'gold', 'system', 'service', 'manager', 'developer', 'student'
+        ];
+
+        // Common dictionary words for passphrase attacks
+        const dictionaryWords = [
+            'apple', 'brave', 'crane', 'delta', 'eagle', 'flame', 'grape', 'harbor', 'ivory', 'jazz',
+            'karma', 'lemon', 'maple', 'noble', 'ocean', 'piano', 'queen', 'river', 'storm', 'tiger',
+            'dragon', 'falcon', 'ghost', 'hawk', 'joker', 'knife', 'lunar', 'metal', 'orbit', 'prism',
+            'quest', 'radar', 'solar', 'tempo', 'unity', 'valor', 'windy', 'xerox', 'anchor', 'blaze',
+            'comet', 'dream', 'ember', 'frost', 'globe', 'honor', 'image', 'kiosk', 'latch', 'mocha'
+        ];
+
+        // L33t substitution mapping
+        const l33tSubstitutions = {
+            '0': 'o', '1': 'i', '3': 'e', '4': 'a', '5': 's', '7': 't',
+            '@': 'a', '$': 's', '!': 'i', '2': 'z', '6': 'g', '8': 'b'
+        };
+
+        // Keyboard patterns
+        const keyboardPatterns = [
+            'qwerty', 'qwertyuiop', 'asdfgh', 'asdfghjkl', 'zxcvbn', 'zxcvbnm',
+            '1234567890', 'qazwsx', 'qazwsxedc', '1qaz2wsx', 'qa1ws2', 'poiuy', 'lkjhgf',
+            'qweasd', 'asdqwe', 'zxcasd', '!@#$%', 'qazxsw', 'edcrfv'
+        ];
+
+        // Reverse l33t substitution
+        function reverseL33t(word) {
+            return word.split('').map(char => {
+                // Find if this char can be unl33ted
+                for (const [leet, normal] of Object.entries(l33tSubstitutions)) {
+                    if (leet === char) return normal;
+                }
+                return char;
+            }).join('');
+        }
+
+        // Detect which attack type would be most effective
+        function detectAttackType(password) {
+            const lower = password.toLowerCase();
+            const result = zxcvbn(password);
+            const patterns = result.sequence.map(s => s.pattern);
+
+            // Check for common password match
+            if (commonPasswords.includes(lower) ||
+                commonPasswords.includes(lower.replace(/[0-9!@#$%^&*]/g, ''))) {
+                return { type: 'dictionary', reason: 'Common password', confidence: 0.95 };
+            }
+
+            // Check for l33t speak
+            const hasL33t = /[0-3@$!]/.test(password);
+            if (hasL33t && patterns.includes('dictionary')) {
+                const unl33ted = reverseL33t(lower);
+                if (commonPasswords.includes(unl33ted) || commonPasswords.includes(unl33ted.replace(/[0-9]/g, ''))) {
+                    return { type: 'pattern', reason: 'L33t-spelled common word', confidence: 0.9 };
+                }
+                return { type: 'pattern', reason: 'L33t substitutions detected', confidence: 0.75 };
+            }
+
+            // Check for keyboard pattern
+            for (const pattern of keyboardPatterns) {
+                if (lower.includes(pattern)) {
+                    return { type: 'pattern', reason: `Keyboard pattern "${pattern}"`, confidence: 0.9 };
+                }
+            }
+
+            // Check for year pattern
+            const yearMatch = password.match(/(19[7-9]\d|20[0-2]\d)/);
+            if (yearMatch) {
+                return { type: 'pattern', reason: `Year pattern ${yearMatch[0]}`, confidence: 0.85 };
+            }
+
+            // Check for sequential numbers
+            const seqMatch = password.match(/(012|123|234|345|456|567|678|789|890|987|876|765|654|543|432|321|210)+/);
+            if (seqMatch) {
+                return { type: 'pattern', reason: 'Sequential numbers', confidence: 0.8 };
+            }
+
+            // Check if it's a dictionary/passphrase
+            if (patterns.includes('dictionary') || patterns.includes('spatial')) {
+                return { type: 'dictionary', reason: 'Contains dictionary word', confidence: 0.7 };
+            }
+
+            // Check for repeat patterns
+            if (/(.)\1{2,}/.test(password)) {
+                return { type: 'pattern', reason: 'Repeated characters', confidence: 0.7 };
+            }
+
+            // Check length - short passwords are brute-forcible
+            if (password.length <= 6) {
+                return { type: 'bruteforce', reason: 'Short password (low entropy)', confidence: 0.6 };
+            }
+
+            // Default - strong password, would need brute force
+            return { type: 'bruteforce', reason: 'High entropy, no patterns', confidence: 0.5 };
+        }
+
+        // Calculate realistic crack time based on zxcvbn guesses
+        function calculateRealisticCrackTime(password, attackType) {
+            const result = zxcvbn(password);
+            const guesses = result.guesses;
+
+            // Adjust guesses based on attack effectiveness
+            let effectiveGuesses;
+            switch (attackType) {
+                case 'dictionary':
+                    effectiveGuesses = Math.min(guesses, commonPasswords.length * 10);
+                    break;
+                case 'pattern':
+                    effectiveGuesses = Math.min(guesses, 10000);
+                    break;
+                default:
+                    effectiveGuesses = guesses;
+            }
+
+            const gpuSpeed = attackHardware.gpu;
+            return effectiveGuesses / gpuSpeed;
+        }
+
+        // Update progress bar in stats
+        function updateProgress(percent, attemptCount, elapsed) {
+            const attemptCountEl = document.getElementById('attemptCount');
+            const timeElapsedEl = document.getElementById('timeElapsed');
+            const charsCrackedEl = document.getElementById('charsCracked');
+
+            if (attemptCountEl) attemptCountEl.textContent = formatNumber(attemptCount);
+            if (timeElapsedEl) timeElapsedEl.textContent = elapsed + 's';
+            if (charsCrackedEl) charsCrackedEl.textContent = Math.floor(percent) + '%';
+        }
+
+        // Simulate dictionary attack
+        async function runDictionaryAttack(password, terminal, updateStats) {
+            const lower = password.toLowerCase();
+            const totalPasswords = commonPasswords.length;
+            const baseTime = 50; // ms per attempt
+
+            // Calculate where in the wordlist we'd find it (simulated)
+            let matchIndex = -1;
+            let matchType = 'not_found';
+
+            // Check exact match
+            for (let i = 0; i < commonPasswords.length; i++) {
+                if (lower === commonPasswords[i]) {
+                    matchIndex = i;
+                    matchType = 'exact';
+                    break;
+                }
+            }
+
+            // Check with common suffixes
+            if (matchIndex === -1) {
+                for (let i = 0; i < commonPasswords.length; i++) {
+                    const base = commonPasswords[i];
+                    const suffixes = ['', '1', '123', '12', '!', '123!', '2024', '2023'];
+                    for (const suffix of suffixes) {
+                        if (lower === base + suffix) {
+                            matchIndex = i;
+                            matchType = 'withSuffix';
+                            break;
+                        }
+                    }
+                    if (matchIndex !== -1) break;
+                }
+            }
+
+            // Check dictionary word + numbers
+            if (matchIndex === -1) {
+                for (let i = 0; i < dictionaryWords.length; i++) {
+                    const base = dictionaryWords[i];
+                    const suffixes = ['', '1', '123', '2024', '99', '00'];
+                    for (const suffix of suffixes) {
+                        if (lower === base + suffix || lower === base.charAt(0).toUpperCase() + base.slice(1) + suffix) {
+                            matchIndex = commonPasswords.length + i;
+                            matchType = 'dictionaryWord';
+                            break;
+                        }
+                    }
+                    if (matchIndex !== -1) break;
+                }
+            }
+
+            // Simulate trying passwords
+            const displayInterval = Math.max(1, Math.floor(totalPasswords / 25));
+            const startTime = Date.now();
+            let attempts = 0;
+
+            for (let i = 0; i < totalPasswords; i++) {
+                attempts++;
+                const current = commonPasswords[i];
+
+                // Show attempt every few iterations
+                if (i % displayInterval === 0 || i < 10) {
+                    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+                    const progress = Math.min(95, Math.round((i / totalPasswords) * 100));
+                    updateStats(progress, attempts, elapsed);
+
+                    const displayWord = i < 15 ? current : '********';
+                    terminal.innerHTML += `<div class="text-red-400">$ trying: ${displayWord}</div>`;
+                    terminal.scrollTop = terminal.scrollHeight;
+                }
+
+                // Simulate finding the password
+                if (matchIndex !== -1 && i >= matchIndex) {
+                    const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+                    const progress = 100;
+                    updateStats(progress, attempts, elapsed);
+
+                    terminal.innerHTML += `<div class="text-green-400 mt-3">$ MATCH FOUND at position ${i + 1}!</div>`;
+                    terminal.innerHTML += `<div class="text-gray-400">$ trying: "${current}"</div>`;
+                    terminal.scrollTop = terminal.scrollHeight;
+
+                    return {
+                        success: true,
+                        attempts: i + 1,
+                        elapsed: parseFloat(elapsed),
+                        method: matchType,
+                        password: current
+                    };
+                }
+
+                // Yield to UI periodically
+                if (i % 50 === 0) {
+                    await sleep(baseTime / 2);
+                }
+            }
+
+            // Not found in common passwords
+            const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+            updateStats(100, attempts, elapsed);
+
+            return {
+                success: false,
+                attempts: attempts,
+                elapsed: parseFloat(elapsed),
+                method: 'not_found'
+            };
+        }
+
+        // Simulate pattern-based attack
+        async function runPatternAttack(password, terminal, updateStats) {
+            const lower = password.toLowerCase();
+            const startTime = Date.now();
+            let attempts = 0;
+
+            terminal.innerHTML += `<div class="text-yellow-400">$ analyzing pattern...</div>`;
+            await sleep(300);
+
+            // Detect specific patterns
+            const detectedPatterns = [];
+
+            // Check l33t
+            if (/[0-3@$!]/.test(password)) {
+                const unl33t = reverseL33t(lower);
+                terminal.innerHTML += `<div class="text-yellow-400">$ detected: l33t substitutions</div>`;
+                terminal.innerHTML += `<div class="text-gray-400">$ converting "${password}" → "${unl33t}"</div>`;
+                detectedPatterns.push({ pattern: 'l33t', original: password, converted: unl33t });
+                attempts++;
+                updateStats(Math.round((attempts / 6) * 100), attempts, ((Date.now() - startTime) / 1000).toFixed(1));
+                await sleep(200);
+            }
+
+            // Check keyboard patterns
+            for (const kp of keyboardPatterns) {
+                if (lower.includes(kp)) {
+                    terminal.innerHTML += `<div class="text-yellow-400">$ detected: keyboard pattern "${kp}"</div>`;
+                    detectedPatterns.push({ pattern: 'keyboard', value: kp });
+                    attempts++;
+                    updateStats(Math.round((attempts / 6) * 100), attempts, ((Date.now() - startTime) / 1000).toFixed(1));
+                    await sleep(200);
+                }
+            }
+
+            // Check year patterns
+            const yearMatch = password.match(/(19[7-9]\d|20[0-2]\d)/);
+            if (yearMatch) {
+                terminal.innerHTML += `<div class="text-yellow-400">$ detected: year pattern "${yearMatch[0]}"</div>`;
+                terminal.innerHTML += `<div class="text-gray-400">$ common years are often appended (birth year?)</div>`;
+                detectedPatterns.push({ pattern: 'year', value: yearMatch[0] });
+                attempts++;
+                updateStats(Math.round((attempts / 6) * 100), attempts, ((Date.now() - startTime) / 1000).toFixed(1));
+                await sleep(200);
+            }
+
+            // Check sequences
+            const seqMatch = password.match(/(012|123|234|345|456|567|678|789|890|987|876|765|654|543|432|321|210)+/);
+            if (seqMatch) {
+                terminal.innerHTML += `<div class="text-yellow-400">$ detected: sequential pattern "${seqMatch[0]}"</div>`;
+                detectedPatterns.push({ pattern: 'sequence', value: seqMatch[0] });
+                attempts++;
+                updateStats(Math.round((attempts / 6) * 100), attempts, ((Date.now() - startTime) / 1000).toFixed(1));
+                await sleep(200);
+            }
+
+            // Now try common pattern combinations
+            terminal.innerHTML += `<div class="text-yellow-400">$ generating pattern variations...</div>`;
+            await sleep(300);
+
+            // Generate variations based on detected patterns
+            const variations = [];
+
+            for (const dp of detectedPatterns) {
+                if (dp.pattern === 'l33t') {
+                    variations.push(dp.converted);
+                    variations.push(dp.converted + '123');
+                    variations.push(dp.converted + '1');
+                    variations.push(dp.converted.charAt(0).toUpperCase() + dp.converted.slice(1));
+                    variations.push(dp.converted.charAt(0).toUpperCase() + dp.converted.slice(1) + '123');
+                }
+                if (dp.pattern === 'year') {
+                    const baseWithoutYear = password.replace(/\d{4}/g, '').replace(/\d{2}$/g, '');
+                    variations.push('password' + dp.value);
+                    variations.push(dp.value + dp.value.slice(-2));
+                    variations.push(baseWithoutYear + dp.value);
+                }
+                if (dp.pattern === 'keyboard') {
+                    variations.push(dp.value);
+                    variations.push(dp.value + '123');
+                    variations.push(dp.value.charAt(0).toUpperCase() + dp.value.slice(1) + '!');
+                }
+            }
+
+            // Try variations
+            terminal.innerHTML += `<div class="text-yellow-400">$ trying ${variations.length} pattern variations...</div>`;
+
+            for (let i = 0; i < variations.length; i++) {
+                attempts++;
+                const v = variations[i];
+                const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+                const progress = Math.min(95, Math.round(((detectedPatterns.length + i + 1) / (detectedPatterns.length + variations.length + 2)) * 100));
+                updateStats(progress, attempts, elapsed);
+
+                terminal.innerHTML += `<div class="text-red-400">$ trying: "${v}"</div>`;
+                terminal.scrollTop = terminal.scrollHeight;
+
+                if (v.toLowerCase() === lower) {
+                    const elapsedFinal = ((Date.now() - startTime) / 1000).toFixed(2);
+                    updateStats(100, attempts, elapsedFinal);
+                    terminal.innerHTML += `<div class="text-green-400 mt-3">$ MATCH FOUND!</div>`;
+                    terminal.innerHTML += `<div class="text-gray-400">$ pattern attack success</div>`;
+                    return { success: true, attempts, elapsed: parseFloat(elapsedFinal), method: 'pattern_variation' };
+                }
+
+                await sleep(100);
+            }
+
+            // Pattern attack failed, fallback message
+            const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+            updateStats(100, attempts, elapsed);
+            terminal.innerHTML += `<div class="text-gray-400">$ pattern variations exhausted</div>`;
+
+            return { success: false, attempts, elapsed: parseFloat(elapsed), method: 'pattern_exhausted' };
+        }
+
+        // Simulate brute force attack
+        async function runBruteForceAttack(password, terminal, updateStats) {
+            const result = zxcvbn(password);
+            const guesses = result.guesses;
+            const startTime = Date.now();
+            const gpuSpeed = attackHardware.gpu;
+
+            // Calculate how long this would realistically take
+            const estimatedTimeSeconds = guesses / gpuSpeed;
+
+            // Determine character classes
+            const hasLower = /[a-z]/.test(password);
+            const hasUpper = /[A-Z]/.test(password);
+            const hasNumber = /[0-9]/.test(password);
+            const hasSpecial = /[^a-zA-Z0-9]/.test(password);
+
+            let charsetDesc = 'lowercase';
+            if (hasLower && hasUpper) charsetDesc = 'mixed case';
+            if (hasNumber) charsetDesc += ' + numbers';
+            if (hasSpecial) charsetDesc += ' + special';
+
+            terminal.innerHTML += `<div class="text-yellow-400">$ attack type: Brute Force</div>`;
+            terminal.innerHTML += `<div class="text-gray-400">$ password length: ${password.length}</div>`;
+            terminal.innerHTML += `<div class="text-gray-400">$ charset: ${charsetDesc}</div>`;
+            terminal.innerHTML += `<div class="text-gray-400">$ estimated entropy: ${Math.log2(guesses).toFixed(0)} bits</div>`;
+            await sleep(300);
+
+            // Simulate progressive brute force phases
+            const phases = [];
+
+            if (password.length <= 4) {
+                phases.push({ len: 4, desc: 'length 4', progress: 15 });
+            }
+            if (password.length <= 6) {
+                phases.push({ len: 6, desc: 'length 5-6', progress: 30 });
+            }
+            if (password.length <= 8) {
+                phases.push({ len: 8, desc: 'length 7-8', progress: 55 });
+            }
+            if (password.length <= 10) {
+                phases.push({ len: 10, desc: 'length 9-10', progress: 75 });
+            }
+            phases.push({ len: password.length, desc: `length ${password.length}`, progress: 95, final: true });
+
+            let totalAttempts = 0;
+            const simulatedMaxAttempts = 100000; // Cap for UI
+
+            for (const phase of phases) {
+                terminal.innerHTML += `<div class="text-yellow-400">$ trying ${phase.desc}...</div>`;
+                terminal.scrollTop = terminal.scrollHeight;
+
+                const phaseAttempts = phase.final ? Math.min(simulatedMaxAttempts - totalAttempts, 10000) : Math.min(simulatedMaxAttempts / phases.length, 5000);
+
+                for (let i = 0; i < phaseAttempts; i++) {
+                    totalAttempts++;
+
+                    if (totalAttempts % 500 === 0 || phase.final) {
+                        const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+                        const progress = Math.min(99, phase.progress + Math.round((i / phaseAttempts) * (phase.final ? 5 : 15)));
+                        updateStats(progress, Math.round(totalAttempts * (guesses / simulatedMaxAttempts)), elapsed);
+
+                        if (phase.final && totalAttempts < 100) {
+                            terminal.innerHTML += `<div class="text-red-400">$ keyspace probe: ${totalAttempts * 1000}+ combinations checked</div>`;
+                        }
+                    }
+
+                    if (totalAttempts % 1000 === 0) {
+                        terminal.scrollTop = terminal.scrollHeight;
+                    }
+
+                    await sleep(1);
+                }
+
+                if (phase.final) {
+                    const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+                    updateStats(100, Math.round(guesses * 0.7), elapsed);
+                    break;
+                }
+            }
+
+            const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+            return {
+                success: true,
+                attempts: Math.round(guesses * 0.7),
+                elapsed: parseFloat(elapsed),
+                estimatedCrackTime: estimatedTimeSeconds,
+                method: 'bruteforce'
+            };
+        }
+
+        // Main attack simulation orchestrator
         async function simulateAttack() {
             const password = passwordInput.value;
             if (!password) return;
@@ -1130,58 +1592,141 @@
             document.body.style.overflow = 'hidden';
 
             const terminalOutput = document.getElementById('terminalOutput');
-            const attemptCount = document.getElementById('attemptCount');
-            const timeElapsed = document.getElementById('timeElapsed');
-            const charsCracked = document.getElementById('charsCracked');
+            const attemptCountEl = document.getElementById('attemptCount');
+            const timeElapsedEl = document.getElementById('timeElapsed');
+            const charsCrackedEl = document.getElementById('charsCracked');
 
-            terminalOutput.innerHTML = '<div class="text-gray-500">$ initializing brute-force attack...</div>';
-            await sleep(500);
-            terminalOutput.innerHTML += '<div class="text-green-400">$ target password: "' + password.split('').map(c => c === ' ' ? ' ' : '*').join('') + '"</div>';
+            // Reset stats display
+            if (attemptCountEl) attemptCountEl.textContent = '0';
+            if (timeElapsedEl) timeElapsedEl.textContent = '0.0s';
+            if (charsCrackedEl) charsCrackedEl.textContent = '0%';
+
+            // Initial terminal output
+            terminalOutput.innerHTML = `
+                <div class="text-gray-500">$ initializing security analysis...</div>
+                <div class="text-gray-500">$ target: "${password.split('').map(c => c === ' ' ? ' ' : '*').join('')}"</div>
+                <div class="text-gray-500">$ length: ${password.length} characters</div>
+            `;
+            await sleep(400);
+
+            // Analyze password with zxcvbn
+            const result = zxcvbn(password);
+            terminalOutput.innerHTML += `<div class="text-gray-400">$ strength score: ${result.score}/4 (${result.guesses.toExponential(2)} guesses)</div>`;
             await sleep(300);
-            terminalOutput.innerHTML += '<div class="text-yellow-400">$ hash rate: 200,000 H/s (RTX 4090)</div>';
-            await sleep(300);
-            terminalOutput.innerHTML += '<div class="text-gray-500">$ starting attack...</div>';
+
+            // Detect attack type
+            const attackInfo = detectAttackType(password);
+            terminalOutput.innerHTML += `<div class="text-cyan-400">$ detected attack type: ${attackInfo.type.toUpperCase()}</div>`;
+            terminalOutput.innerHTML += `<div class="text-gray-400">$ reason: ${attackInfo.reason}</div>`;
+            terminalOutput.innerHTML += `<div class="text-gray-400">$ confidence: ${Math.round(attackInfo.confidence * 100)}%</div>`;
+            terminalOutput.scrollTop = terminalOutput.scrollHeight;
             await sleep(500);
 
-            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
-            let attempts = 0;
-            let cracked = 0;
-            let currentAttempt = '';
-            const startTime = Date.now();
+            // Progress update helper
+            const updateStats = (percent, attempts, elapsed) => {
+                if (attemptCountEl) attemptCountEl.textContent = formatNumber(attempts);
+                if (timeElapsedEl) timeElapsedEl.textContent = elapsed + 's';
+                if (charsCrackedEl) charsCrackedEl.textContent = Math.floor(percent) + '%';
+            };
 
-            const interval = setInterval(() => {
-                attempts++;
-                currentAttempt = '';
-                for (let i = 0; i < password.length; i++) {
-                    if (i < cracked) {
-                        currentAttempt += password[i];
-                    } else {
-                        currentAttempt += chars[Math.floor(Math.random() * chars.length)];
-                    }
-                }
+            // Run the appropriate attack based on detected type
+            let attackResult;
+            let educationalTips = [];
 
-                if (attempts % 5 === 0) {
-                    terminalOutput.innerHTML += '<div class="text-red-400">$ attempt ' + formatNumber(attempts) + ': ' + currentAttempt + '</div>';
+            switch (attackInfo.type) {
+                case 'dictionary':
+                    terminalOutput.innerHTML += `<div class="text-yellow-400 mt-3">$ launching dictionary attack...</div>`;
+                    terminalOutput.innerHTML += `<div class="text-gray-400">$ wordlist: top ${commonPasswords.length} common passwords</div>`;
                     terminalOutput.scrollTop = terminalOutput.scrollHeight;
-                }
+                    await sleep(400);
+                    attackResult = await runDictionaryAttack(password, terminalOutput, updateStats);
+                    educationalTips.push('Use a unique passphrase, not a common password');
+                    educationalTips.push('Avoid dictionary words on their own');
+                    break;
 
-                attemptCount.textContent = formatNumber(attempts);
-                timeElapsed.textContent = ((Date.now() - startTime) / 1000).toFixed(1) + 's';
+                case 'pattern':
+                    terminalOutput.innerHTML += `<div class="text-yellow-400 mt-3">$ launching pattern attack...</div>`;
+                    terminalOutput.scrollTop = terminalOutput.scrollHeight;
+                    await sleep(400);
+                    attackResult = await runPatternAttack(password, terminalOutput, updateStats);
 
-                // Randomly crack a character
-                if (cracked < password.length && Math.random() < 0.1) {
-                    cracked++;
-                    charsCracked.textContent = cracked + '/' + password.length;
-                    terminalOutput.innerHTML += '<div class="text-green-400">$ char ' + cracked + ' matched: "' + password[cracked - 1] + '"</div>';
-                }
+                    if (result.sequence.some(s => s.pattern === 'dictionary')) {
+                        educationalTips.push('Substituting @ for a or 3 for e is a known pattern');
+                        educationalTips.push('Use random words, not predictable substitutions');
+                    }
+                    if (result.sequence.some(s => s.pattern === 'spatial')) {
+                        educationalTips.push('Keyboard walks like "qwerty" are in every attacker\'s wordlist');
+                    }
+                    if (result.sequence.some(s => s.pattern === 'repeat')) {
+                        educationalTips.push('Repeated characters (aaa) add minimal security');
+                    }
+                    if (result.sequence.some(s => s.pattern === 'date')) {
+                        educationalTips.push('Birth years and dates are easy to find on social media');
+                    }
+                    break;
 
-                if (cracked >= password.length) {
-                    clearInterval(interval);
-                    terminalOutput.innerHTML += '<div class="text-green-400 mt-4">$ PASSWORD CRACKED: "' + password + '"</div>';
-                    terminalOutput.innerHTML += '<div class="text-gray-500">$ total attempts: ' + formatNumber(attempts) + '</div>';
-                    terminalOutput.innerHTML += '<div class="text-gray-500">$ time elapsed: ' + ((Date.now() - startTime) / 1000).toFixed(2) + 's</div>';
-                }
-            }, 10);
+                case 'bruteforce':
+                default:
+                    terminalOutput.innerHTML += `<div class="text-yellow-400 mt-3">$ launching brute force attack...</div>`;
+                    terminalOutput.innerHTML += `<div class="text-gray-400">$ hash rate: ${formatNumber(attackHardware.gpu)} H/s (RTX 4090)</div>`;
+                    terminalOutput.scrollTop = terminalOutput.scrollHeight;
+                    await sleep(400);
+                    attackResult = await runBruteForceAttack(password, terminalOutput, updateStats);
+
+                    if (result.score >= 3) {
+                        educationalTips.push('Strong password! Would take ' + formatTime(result.guesses / attackHardware.cloud) + ' to crack on botnet');
+                    } else if (result.score >= 2) {
+                        educationalTips.push('Consider a longer passphrase for better protection');
+                        educationalTips.push('Adding words is more effective than adding symbols');
+                    } else {
+                        educationalTips.push('Increase length - each character exponentially increases security');
+                        educationalTips.push('Use a passphrase: 4+ random words beat short complex passwords');
+                    }
+                    break;
+            }
+
+            await sleep(500);
+
+            // Final result
+            terminalOutput.innerHTML += `<div class="text-gray-500 mt-4">─────────────────────────────────</div>`;
+
+            if (attackResult.success || attackResult.method !== 'not_found') {
+                const crackTime = calculateRealisticCrackTime(password, attackInfo.type);
+
+                terminalOutput.innerHTML += `
+                    <div class="text-green-400 text-lg mt-3">$ CRACKED!</div>
+                    <div class="text-gray-400">$ attack type: ${attackInfo.type.toUpperCase()}</div>
+                    <div class="text-gray-400">$ total attempts: ${formatNumber(attackResult.attempts)}</div>
+                    <div class="text-gray-400">$ simulated time: ${attackResult.elapsed.toFixed(2)}s</div>
+                    <div class="text-yellow-400">$ real crack time (RTX 4090): ${formatTime(crackTime)}</div>
+                `;
+            } else {
+                terminalOutput.innerHTML += `
+                    <div class="text-yellow-400 text-lg mt-3">$ PASSWORD NOT IN COMMON WORDLISTS</div>
+                    <div class="text-gray-400">$ (but may still be vulnerable to targeted attacks)</div>
+                `;
+            }
+
+            // Educational feedback
+            terminalOutput.innerHTML += `<div class="text-gray-500 mt-4">─────────────────────────────────</div>`;
+            terminalOutput.innerHTML += `<div class="text-cyan-400">$ RECOMMENDATIONS:</div>`;
+
+            // Get specific feedback from zxcvbn
+            if (result.feedback.suggestions && result.feedback.suggestions.length > 0) {
+                result.feedback.suggestions.slice(0, 2).forEach(suggestion => {
+                    terminalOutput.innerHTML += `<div class="text-gray-400">$ - ${suggestion}</div>`;
+                });
+            }
+
+            // Add educational tips
+            educationalTips.forEach(tip => {
+                terminalOutput.innerHTML += `<div class="text-gray-400">$ - ${tip}</div>`;
+            });
+
+            // Final stats update
+            if (timeElapsedEl) timeElapsedEl.textContent = attackResult.elapsed.toFixed(1) + 's';
+            if (charsCrackedEl) charsCrackedEl.textContent = '100%';
+            terminalOutput.scrollTop = terminalOutput.scrollHeight;
         }
 
         // ============ PRIVACY INSPECTOR ============
