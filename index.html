@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShieldCheck — Cybersecurity Education Platform</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/zxcvbn/4.4.2/zxcvbn.js"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'sans': ['Inter', 'sans-serif'],
+                        'mono': ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        'cyber-dark': '#08080e',
+                        'cyber-darker': '#06060c',
+                        'cyber-blue': '#22c55e',
+                        'cyber-purple': '#06b6d4',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-cyber-darker text-gray-100 font-sans min-h-screen terminal-grid">
+    <nav class="fixed top-0 left-0 right-0 z-50 bg-cyber-darker/95 backdrop-blur-md border-b border-[#1a1a2a] transition-all duration-300">
+        <div class="max-w-6xl mx-auto px-6 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-3 group cursor-pointer">
+                <div class="w-9 h-9 bg-gradient-to-br from-cyber-blue to-cyber-purple rounded-lg flex items-center justify-center transition-transform duration-300 group-hover:scale-110">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>
+                    </svg>
+                </div>
+                <span class="text-lg font-bold font-mono tracking-tight">
+                    <span class="text-green-400">shield</span><span class="text-cyan-400">check</span>
+                </span>
+            </div>
+            <div class="flex items-center space-x-6 font-mono text-sm">
+                <a href="#dashboard" class="text-gray-500 hover:text-green-400 transition-colors">~/dashboard</a>
+                <a href="#how-it-works" class="text-gray-500 hover:text-green-400 transition-colors">~/privacy</a>
+                <a href="#about" class="text-gray-500 hover:text-green-400 transition-colors">~/about</a>
+            </div>
+        </div>
+    </nav>
+
+    <section class="hero-gradient pt-28 pb-14">
+        <div class="max-w-6xl mx-auto px-6">
+            <div class="text-center mb-10 fade-in-up">
+                <div class="term-badge justify-center mb-5">
+                    <span class="bracket">[</span>
+                    <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
+                    <span class="text-green-400">Live Security Analysis</span>
+                    <span class="bracket">]</span>
+                </div>
+                <h1 class="text-4xl md:text-5xl font-bold font-mono tracking-tight mb-4 leading-tight">
+                    <span class="text-gray-300">Password Security</span><br>
+                    <span class="bg-gradient-to-r from-green-400 to-cyan-400 bg-clip-text text-transparent">Made Transparent</span>
+                </h1>
+                <p class="text-base text-gray-500 max-w-xl mx-auto font-mono">
+                    Explore password strength, simulate attacks, and understand cybersecurity concepts — all locally in your browser.
+                </p>
+            </div>
+
+            <div class="terminal-window max-w-2xl mx-auto fade-in-up" style="animation-delay: 0.2s">
+                <div class="terminal-window-header">
+                    <span class="terminal-dot off"></span>
+                    <span class="terminal-dot min"></span>
+                    <span class="terminal-dot max"></span>
+                    <span class="terminal-title">/home/shieldcheck/analysis.sh</span>
+                </div>
+                <div class="p-6">
+                    <div class="mb-5">
+                        <label for="password" class="block font-mono text-xs text-gray-500 mb-2 tracking-wide uppercase">Enter Password to Analyze</label>
+                        <div class="relative">
+                            <input type="password" id="password" placeholder="Type your password here..." class="w-full bg-[#06060e] border border-[#1a1a2a] rounded-lg px-4 py-3.5 pr-12 text-base font-mono text-gray-200 placeholder-gray-600 focus:outline-none focus:ring-1 focus:ring-green-500/50 focus:border-green-500/30 transition-all" autocomplete="off">
+                            <button id="togglePassword" type="button" class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-300 transition-colors p-1" aria-label="Toggle password visibility">
+                                <svg id="eyeIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                </svg>
+                                <svg id="eyeOffIcon" class="w-4 h-4 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"></path>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="strengthSection" class="mb-5">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <span class="font-mono text-xs text-gray-500 uppercase tracking-wide">Password Strength</span>
+                            <span id="strengthLabel" class="font-mono text-xs text-gray-600">Enter a password</span>
+                        </div>
+                        <div class="h-2 bg-[#0a0a16] border border-[#1a1a2a] rounded-full overflow-hidden">
+                            <div id="strengthBar" class="h-full rounded-full transition-all duration-300 strength-glow progress-stripes" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2.5">
+                        <button id="generatePassphrase" class="bg-green-600/20 hover:bg-green-600/30 text-green-400 border border-green-600/30 font-mono text-xs py-2.5 rounded-lg transition-all btn-term flex items-center justify-center space-x-1.5">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                            <span>Enhance</span>
+                        </button>
+                        <button id="checkBreach" disabled class="bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-400 border border-cyan-600/30 disabled:opacity-30 disabled:cursor-not-allowed font-mono text-xs py-2.5 rounded-lg transition-all btn-term flex items-center justify-center space-x-1.5">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                            <span>Check Breach</span>
+                        </button>
+                        <button id="simulateAttack" disabled class="bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-600/30 disabled:opacity-30 disabled:cursor-not-allowed font-mono text-xs py-2.5 rounded-lg transition-all btn-term flex items-center justify-center space-x-1.5">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                            <span>Simulate</span>
+                        </button>
+                        <button id="openPrivacy" class="bg-amber-600/20 hover:bg-amber-600/30 text-amber-400 border border-amber-600/30 font-mono text-xs py-2.5 rounded-lg transition-all btn-term flex items-center justify-center space-x-1.5">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                            <span>Privacy</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="dashboard" class="py-14">
+        <div class="max-w-6xl mx-auto px-6">
+            <div class="text-center mb-10">
+                <h2 class="font-mono text-lg font-semibold text-green-400 mb-1">$ ./analyze</h2>
+                <p class="text-sm text-gray-600 font-mono">Real-time password analysis dashboard</p>
+            </div>
+            <div class="grid md:grid-cols-3 gap-5 max-w-5xl mx-auto">
+                <div class="terminal-window">
+                    <div class="terminal-window-header">
+                        <span class="terminal-dot off"></span>
+                        <span class="terminal-dot min"></span>
+                        <span class="terminal-dot max"></span>
+                        <span class="terminal-title">strength_analysis.log</span>
+                    </div>
+                    <div class="p-5">
+                        <div class="flex items-center space-x-2 mb-3">
+                            <h3 class="text-sm font-mono text-gray-400 tracking-wide uppercase">Strength Analysis</h3>
+                        </div>
+                        <div id="strengthCard" class="space-y-4">
+                            <div class="flex items-end space-x-3">
+                                <div class="text-3xl font-bold font-mono transition-all duration-300 text-gray-500" id="scoreDisplay">—</div>
+                                <div class="text-xs text-gray-600 font-mono pb-0.5">
+                                    <div class="text-green-400/70">/4</div>
+                                    <div>strong score</div>
+                                </div>
+                            </div>
+                            <div id="feedbackList" class="space-y-1.5">
+                                <div class="text-gray-600 text-xs font-mono italic">[waiting for input]</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="terminal-window">
+                    <div class="terminal-window-header">
+                        <span class="terminal-dot off"></span>
+                        <span class="terminal-dot min"></span>
+                        <span class="terminal-dot max"></span>
+                        <span class="terminal-title">breach_check.log</span>
+                    </div>
+                    <div class="p-5">
+                        <h3 class="text-sm font-mono text-gray-400 tracking-wide uppercase mb-3">Breach Status</h3>
+                        <div id="breachCard">
+                            <div id="breachInitial" class="text-center py-6">
+                                <div class="w-14 h-14 mx-auto mb-3 border border-[#1a1a2a] rounded-full flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                </div>
+                                <p class="font-mono text-xs text-gray-600">Enter a password and check</p>
+                            </div>
+                            <div id="breachLoading" class="hidden text-center py-6">
+                                <div class="w-14 h-14 mx-auto mb-3 border border-cyan-500/30 rounded-full flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-cyan-400 animate-spin" fill="none" viewBox="0 0 24 24">
+                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                </div>
+                                <p class="font-mono text-xs text-gray-400">Checking...</p>
+                                <p class="text-xs text-gray-700 mt-1 font-mono" id="hashPreview">SHA1(......)</p>
+                            </div>
+                            <div id="breachSafe" class="hidden">
+                                <div class="text-center py-5">
+                                    <div class="w-14 h-14 mx-auto mb-3 border border-green-500/30 rounded-full flex items-center justify-center pulse-alert">
+                                        <svg class="w-6 h-6 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                        </svg>
+                                    </div>
+                                    <h4 class="font-mono text-sm font-semibold text-green-400 mb-1">Not Found</h4>
+                                    <p class="text-xs text-gray-500 font-mono">Safe from known breaches</p>
+                                    <div class="mt-2 text-xl font-bold font-mono text-green-500/70">0</div>
+                                    <p class="text-xs text-gray-700 font-mono">times in breaches</p>
+                                </div>
+                            </div>
+                            <div id="breachFound" class="hidden">
+                                <div class="text-center py-5">
+                                    <div class="w-14 h-14 mx-auto mb-3 border border-red-500/30 rounded-full flex items-center justify-center pulse-alert">
+                                        <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                        </svg>
+                                    </div>
+                                    <h4 class="font-mono text-sm font-semibold text-red-400 mb-1">Compromised!</h4>
+                                    <p class="text-xs text-gray-500 font-mono">Found in data breaches</p>
+                                    <div class="mt-2 text-xl font-bold font-mono text-red-400" id="breachCount">0</div>
+                                    <p class="text-xs text-gray-700 font-mono">times seen</p>
+                                </div>
+                            </div>
+                            <div id="breachError" class="hidden">
+                                <div class="text-center py-5">
+                                    <div class="w-14 h-14 mx-auto mb-3 border border-amber-500/30 rounded-full flex items-center justify-center">
+                                        <svg class="w-6 h-6 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        </svg>
+                                    </div>
+                                    <h4 class="font-mono text-sm font-semibold text-amber-400 mb-1">Check Failed</h4>
+                                    <p class="text-xs text-gray-500 font-mono" id="errorMessage">Unable to check</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="terminal-window">
+                    <div class="terminal-window-header">
+                        <span class="terminal-dot off"></span>
+                        <span class="terminal-dot min"></span>
+                        <span class="terminal-dot max"></span>
+                        <span class="terminal-title">crack_time.log</span>
+                    </div>
+                    <div class="p-5">
+                        <h3 class="text-sm font-mono text-gray-400 tracking-wide uppercase mb-3">Time to Crack</h3>
+                        <div id="crackTimeCard" class="space-y-2">
+                            <div class="flex items-center justify-between py-2 border-b border-[#1a1a2a]">
+                                <span class="font-mono text-xs text-gray-500">$ Laptop (CPU)</span>
+                                <span id="crackLaptop" class="text-sm font-mono text-gray-600">—</span>
+                            </div>
+                            <div class="flex items-center justify-between py-2 border-b border-[#1a1a2a]">
+                                <span class="font-mono text-xs text-gray-500">$ RTX 4090</span>
+                                <span id="crackGPU" class="text-sm font-mono text-gray-600">—</span>
+                            </div>
+                            <div class="flex items-center justify-between py-2">
+                                <span class="font-mono text-xs text-gray-500">$ Botnet/Cloud</span>
+                                <span id="crackCloud" class="text-sm font-mono text-gray-600">—</span>
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-700 mt-3 font-mono italic">Based on SHA-1 hash rate</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-5 terminal-window max-w-5xl mx-auto">
+                <div class="terminal-window-header">
+                    <span class="terminal-dot off"></span>
+                    <span class="terminal-dot min"></span>
+                    <span class="terminal-dot max"></span>
+                    <span class="terminal-title">pattern_detection.log</span>
+                </div>
+                <div class="p-5">
+                    <h3 class="text-sm font-mono text-gray-400 tracking-wide uppercase mb-4">Pattern Detection</h3>
+                    <div id="patternAnalysis" class="grid md:grid-cols-3 gap-3">
+                        <div id="patternL33t" class="hidden border border-red-500/25 rounded-lg p-3.5 transition-all duration-300 hover:border-red-500/40 flex flex-col items-center text-center bg-red-500/5">
+                            <span class="font-mono text-xs font-medium text-red-400 mb-1.5">L33t Speak</span>
+                            <p id="patternL33tText" class="text-xs text-gray-500 font-mono leading-relaxed"></p>
+                        </div>
+                        <div id="patternKeyboard" class="hidden border border-orange-500/25 rounded-lg p-3.5 transition-all duration-300 hover:border-orange-500/40 flex flex-col items-center text-center bg-orange-500/5">
+                            <span class="font-mono text-xs font-medium text-orange-400 mb-1.5">Keyboard Pattern</span>
+                            <p id="patternKeyboardText" class="text-xs text-gray-500 font-mono leading-relaxed"></p>
+                        </div>
+                        <div id="patternYear" class="hidden border border-amber-500/25 rounded-lg p-3.5 transition-all duration-300 hover:border-amber-500/40 flex flex-col items-center text-center bg-amber-500/5">
+                            <span class="font-mono text-xs font-medium text-amber-400 mb-1.5">Common Year</span>
+                            <p id="patternYearText" class="text-xs text-gray-500 font-mono leading-relaxed"></p>
+                        </div>
+                        <div id="patternNone" class="col-span-3 text-center py-3 text-gray-600 font-mono text-xs">
+                            <span class="text-green-500/60">OK</span> — No common patterns detected
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="how-it-works" class="py-14 bg-[#06060e]/50 border-t border-[#1a1a2a]">
+        <div class="max-w-6xl mx-auto px-6">
+            <div class="text-center mb-10">
+                <h2 class="font-mono text-lg font-semibold text-green-400 mb-1">$ ./k_anonymity_demo</h2>
+                <p class="text-sm text-gray-600 font-mono max-w-xl mx-auto">How k-Anonymity protects your privacy when checking for breaches</p>
+            </div>
+            <div class="max-w-4xl mx-auto">
+                <div id="kAnonFlow" class="hidden">
+                    <div class="grid md:grid-cols-4 gap-3">
+                        <div id="step1" class="border border-[#1a1a2a] rounded-lg p-4 text-center opacity-50 transition-all duration-300 bg-[#0c0c18]">
+                            <div id="circle1" class="w-10 h-10 border border-green-500/30 rounded-full flex items-center justify-center mx-auto mb-2">
+                                <span class="text-green-400 font-mono font-bold text-sm">1</span>
+                            </div>
+                            <h4 class="font-mono text-xs font-medium text-gray-300 mb-0.5">Hash Locally</h4>
+                            <p class="text-xs text-gray-600 font-mono">SHA-1 in browser</p>
+                        </div>
+                        <div id="step2" class="border border-[#1a1a2a] rounded-lg p-4 text-center opacity-50 transition-all duration-300 bg-[#0c0c18]">
+                            <div id="circle2" class="w-10 h-10 border border-cyan-500/30 rounded-full flex items-center justify-center mx-auto mb-2">
+                                <span class="text-cyan-400 font-mono font-bold text-sm">2</span>
+                            </div>
+                            <h4 class="font-mono text-xs font-medium text-gray-300 mb-0.5">Split Hash</h4>
+                            <p class="text-xs text-gray-600 font-mono">5 chars + 35 chars</p>
+                        </div>
+                        <div id="step3" class="border border-[#1a1a2a] rounded-lg p-4 text-center opacity-50 transition-all duration-300 bg-[#0c0c18]">
+                            <div id="circle3" class="w-10 h-10 border border-green-500/30 rounded-full flex items-center justify-center mx-auto mb-2">
+                                <span class="text-green-400 font-mono font-bold text-sm">3</span>
+                            </div>
+                            <h4 class="font-mono text-xs font-medium text-gray-300 mb-0.5">Send Prefix</h4>
+                            <p class="text-xs text-gray-600 font-mono">Only 5 chars to API</p>
+                        </div>
+                        <div id="step4" class="border border-[#1a1a2a] rounded-lg p-4 text-center opacity-50 transition-all duration-300 bg-[#0c0c18]">
+                            <div id="circle4" class="w-10 h-10 border border-amber-500/30 rounded-full flex items-center justify-center mx-auto mb-2">
+                                <span class="text-amber-400 font-mono font-bold text-sm">4</span>
+                            </div>
+                            <h4 class="font-mono text-xs font-medium text-gray-300 mb-0.5">Match Local</h4>
+                            <p class="text-xs text-gray-600 font-mono">Full hash stays private</p>
+                        </div>
+                    </div>
+                    <div class="mt-5 border border-[#1a1a2a] rounded-lg p-5 font-mono text-xs bg-[#0a0a14]">
+                        <div id="flowCode" class="space-y-2">
+                            <div id="flowLine1" class="flex items-center space-x-2 flow-line">
+                                <span class="text-gray-600">// Password:</span>
+                                <span id="flowPasswordText" class="text-gray-200"></span>
+                            </div>
+                            <div id="arrow1" class="text-gray-700 flow-arrow text-center">|</div>
+                            <div id="flowLine2" class="flex items-center space-x-2 flow-line">
+                                <span class="text-gray-600">// SHA-1:</span>
+                                <span id="flowHashText" class="text-red-400"></span>
+                            </div>
+                            <div id="arrow2" class="text-gray-700 flow-arrow text-center">|</div>
+                            <div id="flowLine3" class="flex items-center space-x-2 flex-wrap flow-line">
+                                <span class="text-gray-600">// Send:</span>
+                                <span id="flowSendText" class="text-green-400"></span>
+                                <span class="text-gray-600 mx-1">| Keep:</span>
+                                <span id="flowKeepText" class="text-cyan-400"></span>
+                            </div>
+                            <div id="arrow3" class="text-gray-700 flow-arrow text-center">|</div>
+                            <div id="flowLine4" class="flex items-center space-x-2 flow-line">
+                                <span class="text-gray-600">// Result:</span>
+                                <span id="flowResultText" class="ml-2"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="kAnonDefault">
+                    <div class="grid md:grid-cols-4 gap-3">
+                        <div class="border border-[#1a1a2a] rounded-lg p-4 text-center bg-[#0c0c18] section-card">
+                            <div class="w-10 h-10 border border-green-500/30 rounded-full flex items-center justify-center mx-auto mb-2">
+                                <span class="text-green-400 font-mono font-bold text-sm">1</span>
+                            </div>
+                            <h4 class="font-mono text-xs font-medium text-gray-300 mb-0.5">Hash Locally</h4>
+                            <p class="text-xs text-gray-600 font-mono">SHA-1 in browser</p>
+                        </div>
+                        <div class="border border-[#1a1a2a] rounded-lg p-4 text-center bg-[#0c0c18] section-card">
+                            <div class="w-10 h-10 border border-cyan-500/30 rounded-full flex items-center justify-center mx-auto mb-2">
+                                <span class="text-cyan-400 font-mono font-bold text-sm">2</span>
+                            </div>
+                            <h4 class="font-mono text-xs font-medium text-gray-300 mb-0.5">Split Hash</h4>
+                            <p class="text-xs text-gray-600 font-mono">5 chars + 35 chars</p>
+                        </div>
+                        <div class="border border-[#1a1a2a] rounded-lg p-4 text-center bg-[#0c0c18] section-card">
+                            <div class="w-10 h-10 border border-green-500/30 rounded-full flex items-center justify-center mx-auto mb-2">
+                                <span class="text-green-400 font-mono font-bold text-sm">3</span>
+                            </div>
+                            <h4 class="font-mono text-xs font-medium text-gray-300 mb-0.5">Send Prefix</h4>
+                            <p class="text-xs text-gray-600 font-mono">Only 5 chars to API</p>
+                        </div>
+                        <div class="border border-[#1a1a2a] rounded-lg p-4 text-center bg-[#0c0c18] section-card">
+                            <div class="w-10 h-10 border border-amber-500/30 rounded-full flex items-center justify-center mx-auto mb-2">
+                                <span class="text-amber-400 font-mono font-bold text-sm">4</span>
+                            </div>
+                            <h4 class="font-mono text-xs font-medium text-gray-300 mb-0.5">Match Local</h4>
+                            <p class="text-xs text-gray-600 font-mono">Full hash stays private</p>
+                        </div>
+                    </div>
+                    <div class="mt-5 border border-[#1a1a2a] rounded-lg p-5 font-mono text-xs bg-[#0a0a14]">
+                        <div class="space-y-2">
+                            <div><span class="text-gray-600">// Password:</span><span class="text-gray-300 ml-2">"MySecretPassword123!"</span></div>
+                            <div class="text-gray-700 text-center">|</div>
+                            <div><span class="text-gray-600">// SHA-1:</span><span class="text-red-400 ml-2">"2DB8F1<span class="bg-red-900/30">2E9A7F3C4E1B9D6A8F2E1C3D4B5E6F7A8B9</span>"</span></div>
+                            <div class="text-gray-700 text-center">|</div>
+                            <div class="flex items-center space-x-2 flex-wrap">
+                                <span class="text-gray-600">// Send:</span>
+                                <span class="text-green-400 ml-2">"2D8F1"</span>
+                                <span class="text-gray-600 mx-1">| Keep:</span>
+                                <span class="text-cyan-400 ml-2">"2E9A7F3C4E1B9D6A8F2E1C3D4B5E6F7A8B9"</span>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-center text-gray-700 mt-5 font-mono text-xs">Click "Check Breach" to see the flow in action</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="about" class="py-14">
+        <div class="max-w-6xl mx-auto px-6">
+            <div class="max-w-2xl mx-auto text-center">
+                <div class="text-center mb-10">
+                    <h2 class="font-mono text-lg font-semibold text-green-400 mb-1">$ ./about</h2>
+                    <p class="text-sm text-gray-600 font-mono">About this project</p>
+                </div>
+                <div class="terminal-window">
+                    <div class="terminal-window-header">
+                        <span class="terminal-dot off"></span>
+                        <span class="terminal-dot min"></span>
+                        <span class="terminal-dot max"></span>
+                        <span class="terminal-title">about_shieldcheck.md</span>
+                    </div>
+                    <div class="p-8 text-center">
+                        <div class="w-16 h-16 bg-gradient-to-br from-green-500/20 to-cyan-500/20 rounded-xl flex items-center justify-center mx-auto mb-5 float border border-green-500/20">
+                            <svg class="w-8 h-8 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                            </svg>
+                        </div>
+                        <p class="text-gray-300 font-mono text-sm leading-relaxed mb-5">
+                            I <span class="text-green-400 font-semibold">Farhan Naser</span> built this project to showcase my understanding of
+                            <span class="text-cyan-400">password security</span>,
+                            <span class="text-green-400">k-Anonymity</span>,
+                            <span class="text-amber-400">SHA-1 hashing</span>,
+                            <span class="text-pink-400">web cryptography</span>, and
+                            <span class="text-cyan-300">cybersecurity concepts</span>.
+                        </p>
+                        <p class="text-gray-500 text-xs font-mono leading-relaxed">
+                            All analysis happens locally in your browser — your password never leaves your device. This demonstrates zero-knowledge security principles.
+                        </p>
+                        <div class="mt-6 flex flex-wrap justify-center gap-2">
+                            <span class="px-3 py-1 border border-green-500/20 text-green-400 text-xs font-mono rounded">Tailwind CSS</span>
+                            <span class="px-3 py-1 border border-cyan-500/20 text-cyan-400 text-xs font-mono rounded">JavaScript</span>
+                            <span class="px-3 py-1 border border-green-500/20 text-green-400 text-xs font-mono rounded">Web Crypto API</span>
+                            <span class="px-3 py-1 border border-amber-500/20 text-amber-400 text-xs font-mono rounded">zxcvbn</span>
+                            <span class="px-3 py-1 border border-pink-500/20 text-pink-400 text-xs font-mono rounded">HIBP API</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="py-6 border-t border-[#1a1a2a]">
+        <div class="max-w-6xl mx-auto px-6">
+            <div class="flex flex-col md:flex-row items-center justify-between">
+                <div class="flex items-center space-x-2 mb-3 md:mb-0">
+                    <span class="font-mono text-xs text-gray-600">$ shieldcheck</span>
+                </div>
+                <p class="text-gray-700 text-xs font-mono">Built by Farhan Naser · <span class="text-green-500/60">Zero-knowledge security</span></p>
+            </div>
+        </div>
+    </footer>
+
+    <div id="attackModal" class="fixed inset-0 z-50 hidden modal-backdrop flex items-center justify-center p-4">
+        <div class="terminal-window max-w-2xl w-full max-h-[90vh] shadow-2xl">
+            <div class="terminal-window-header">
+                <span class="terminal-dot off"></span>
+                <span class="terminal-dot min"></span>
+                <span class="terminal-dot max"></span>
+                <span class="terminal-title">attack_simulation.sh</span>
+                <button id="closeAttackModal" class="ml-auto text-gray-600 hover:text-gray-300 transition-colors p-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="p-5">
+                <div class="bg-[#06060e] border border-[#1a1a2a] rounded-lg p-4 font-mono text-sm h-56 relative">
+                    <div id="terminalOutput" class="space-y-1 h-full overflow-y-auto text-xs" style="max-height: 180px;">
+                        <div class="text-gray-600">$ initializing brute-force attack...</div>
+                    </div>
+                    <div id="terminalCursor" class="inline-block w-2 h-4 bg-green-500 ml-1 cursor-blink"></div>
+                </div>
+                <div class="mt-4 grid grid-cols-3 gap-3 text-center">
+                    <div class="border border-[#1a1a2a] rounded-lg p-3 bg-[#0c0c18]">
+                        <div class="text-lg font-bold font-mono text-green-400" id="attemptCount">0</div>
+                        <div class="text-xs text-gray-600 font-mono">Attempts</div>
+                    </div>
+                    <div class="border border-[#1a1a2a] rounded-lg p-3 bg-[#0c0c18]">
+                        <div class="text-lg font-bold font-mono text-cyan-400" id="timeElapsed">0.0s</div>
+                        <div class="text-xs text-gray-600 font-mono">Elapsed</div>
+                    </div>
+                    <div class="border border-[#1a1a2a] rounded-lg p-3 bg-[#0c0c18]">
+                        <div class="text-lg font-bold font-mono text-green-400" id="charsCracked">0</div>
+                        <div class="text-xs text-gray-600 font-mono">Progress</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="privacyModal" class="fixed inset-0 z-50 hidden modal-backdrop flex items-center justify-center p-4">
+        <div class="terminal-window max-w-2xl w-full max-h-[90vh] shadow-2xl">
+            <div class="terminal-window-header">
+                <span class="terminal-dot off"></span>
+                <span class="terminal-dot min"></span>
+                <span class="terminal-dot max"></span>
+                <span class="terminal-title">privacy_inspector.sh</span>
+                <button id="closePrivacyModal" class="ml-auto text-gray-600 hover:text-gray-300 transition-colors p-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="p-5 overflow-y-auto max-h-[70vh]">
+                <div class="space-y-3">
+                    <div class="bg-[#06060e] border border-[#1a1a2a] rounded-lg p-4 font-mono text-xs">
+                        <div class="text-gray-600 mb-2">// Step 1: Enter a password</div>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-green-400">&gt;</span>
+                            <span class="text-gray-200" id="privacyPassword">Enter password above</span>
+                        </div>
+                    </div>
+                    <div class="text-center text-gray-700 font-mono text-xs">|</div>
+                    <div class="bg-[#06060e] border border-[#1a1a2a] rounded-lg p-4 font-mono text-xs">
+                        <div class="text-gray-600 mb-2">// Step 2: SHA-1 Hash (Browser Only)</div>
+                        <div class="flex items-center space-x-2 flex-wrap">
+                            <span class="text-green-400">&gt;</span>
+                            <span class="text-red-400" id="privacyHash">—</span>
+                        </div>
+                        <div class="mt-1.5 text-green-500/70 text-xs">OK Hash computed locally</div>
+                    </div>
+                    <div class="text-center text-gray-700 font-mono text-xs">|</div>
+                    <div class="bg-[#06060e] border border-[#1a1a2a] rounded-lg p-4 font-mono text-xs">
+                        <div class="text-gray-600 mb-2">// Step 3: Split Hash</div>
+                        <div class="flex items-center space-x-4 flex-wrap">
+                            <div>
+                                <span class="text-gray-600">Prefix:</span>
+                                <span class="text-green-400 ml-1" id="privacyPrefix">—</span>
+                                <span class="text-xs text-gray-700 ml-1">(sent to API)</span>
+                            </div>
+                            <div>
+                                <span class="text-gray-600">Suffix:</span>
+                                <span class="text-cyan-400 ml-1" id="privacySuffix">—</span>
+                                <span class="text-xs text-gray-700 ml-1">(kept local)</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-center text-gray-700 font-mono text-xs">|</div>
+                    <div class="bg-[#06060e] border border-[#1a1a2a] rounded-lg p-4 font-mono text-xs">
+                        <div class="text-gray-600 mb-2">// Step 4: API Response</div>
+                        <div class="text-gray-500" id="privacyApiResponse">Enter password to see API call</div>
+                        <div class="mt-1.5 text-xs text-gray-700">API sees only the prefix, cannot identify password</div>
+                    </div>
+                </div>
+                <div class="mt-4 p-3 border border-green-500/20 rounded-lg bg-green-500/5">
+                    <p class="text-green-400 text-xs font-mono">OK Your password remains 100% private</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js" defer></script>
+</body>
+</html>
