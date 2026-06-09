@@ -79,7 +79,7 @@ ShieldCheck/
 - All UI sections: Navigation, Hero, Dashboard, How It Works, About, Footer, Modals
 
 ### `styles.css`
-- 165 lines of custom CSS (not provided by Tailwind)
+- 165 lines of custom CSS 
 - Custom scrollbar styling
 - Card hover effects with transforms and box-shadows
 - Button glow effects
